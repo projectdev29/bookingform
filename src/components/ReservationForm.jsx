@@ -1,7 +1,6 @@
 import {
   Box,
   Button,
-  FormControl,
   FormControlLabel,
   FormGroup,
   FormLabel,
