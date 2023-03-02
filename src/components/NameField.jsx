@@ -13,11 +13,12 @@ export default function NameField() {
     <div>
       <Stack direction="row" spacing={2}>
         <InputLabel id="select-title-label">
-          Title
+          Title{" "}
           <Select
             labelId="select-title-label"
             id="select-label-value"
             value={title}
+            size="small"
             onChange={handleTitleChange}
           >
             <MenuItem value=""></MenuItem>
@@ -39,17 +40,24 @@ export default function NameField() {
           </Select>
         </InputLabel>
         <TextField
+          size="small"
           margin="normal"
           required
           id="outlined-required"
           label="First Name"
         />
         <TextField
+          size="small"
           margin="normal"
           id="outlined-middlename"
           label="Middle Name"
         />
-        <TextField margin="normal" id="outlined-lastname" label="Last Name" />
+        <TextField
+          size="small"
+          margin="normal"
+          id="outlined-lastname"
+          label="Last Name"
+        />
       </Stack>
     </div>
   );

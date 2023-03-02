@@ -25,19 +25,19 @@ const EmailField = () => {
 
   return (
     <div>
-      <Stack direction="row" spacing={2}>
+      <Stack style={{ width: "50%" }} spacing={2}>
         <TextField
           label="Email"
+          size="small"
           value={email}
           onChange={handleEmailChange}
           onBlur={handleEmailBlur}
           error={error}
           helperText={error ? "Invalid email format" : ""}
         />
-        <br></br>
-        <br></br>
         <TextField
           label="Confirm Email"
+          size="small"
           onChange={handleConfirmEmailChange}
           onBlur={handleEmailBlur}
           value={confirmEmail}

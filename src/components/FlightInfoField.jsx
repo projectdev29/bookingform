@@ -17,8 +17,20 @@ export default function FlightInfoField() {
   return (
     <div>
       <Stack direction="row" spacing={2}>
-        <TextField required id="outlined-required" label="Departing city" />
-        <TextField required id="outlined-required" label="Arriving city" />
+        <TextField
+          required
+          size="small"
+          id="outlined-required"
+          label="Departing city"
+          style={{ width: "30%" }}
+        />
+        <TextField
+          required
+          size="small"
+          id="outlined-required"
+          label="Arriving city"
+          style={{ width: "30%" }}
+        />
         <LocalizationProvider dateAdapter={AdapterDayjs}>
           <MobileDatePicker
             margin="normal"
@@ -27,7 +39,8 @@ export default function FlightInfoField() {
             inputFormat="MM/DD/YYYY"
             value={value}
             onChange={handleChange}
-            renderInput={(params) => <TextField {...params} />}
+            renderInput={(params) => <TextField size="small" {...params} />}
+            style={{ width: "10%" }}
           />
         </LocalizationProvider>
         <br></br>

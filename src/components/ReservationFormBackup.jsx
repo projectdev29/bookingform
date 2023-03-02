@@ -1,15 +1,9 @@
-import React, { useState } from "react";
 import {
   Box,
   Button,
-  Checkbox,
-  FormControl,
   FormControlLabel,
   FormGroup,
-  FormHelperText,
   FormLabel,
-  Grid,
-  Input,
   InputLabel,
   MenuItem,
   Radio,
@@ -17,32 +11,12 @@ import {
   Select,
   Stack,
   Switch,
-  Typography,
 } from "@mui/material";
-import styled from "@emotion/styled";
+import React, { useState } from "react";
+import EmailField from "./EmailFields";
 import FlightInfoField from "./FlightInfoField";
 import HotelField from "./HotelField";
-import EmailFields from "./EmailFields";
-
-const Form = styled.form`
-  padding: 16px;
-`;
-
-const Fieldset = styled.fieldset`
-  border: none;
-  margin: 0;
-  padding: 0;
-`;
-
-const FormTitle = styled(Typography)`
-  font-weight: 600;
-  margin-bottom: 16px;
-`;
-
-const FormSubtitle = styled(Typography)`
-  font-weight: 600;
-  margin-bottom: 8px;
-`;
+import NameField from "./NameField";
 
 export default function ReservationForm() {
   const [numberOfPassengers, setNumberOfPassengers] = useState(1);
@@ -52,57 +26,54 @@ export default function ReservationForm() {
   const [deliveryOptionValue, setDeliveryOptionValue] =
     useState("Within 24 hours");
 
-  const handleNumberOfPassengersChange = (event) => {
+  function handleNumberOfPassengersChange(event) {
     setNumberOfPassengers(Number(event.target.value));
-  };
+  }
 
-  const handleNumberOfFlightsChange = (event) => {
+  function toggleHotelOption(event) {
+    setAddHotel(event.target.checked);
+  }
+  function handleNumberOfFlightsChange(event) {
     setNumberOfFlights(Number(event.target.value));
-    setNumberOfHotels(Number(event.target.value) - 1);
-  };
+  }
 
-  const handleNumberOfHotelsChange = (event) => {
+  function handleNumberOfHotelsChange(event) {
     setNumberOfHotels(Number(event.target.value));
-  };
+  }
 
-  const handleDeliveryOptionChange = (event) => {
+  function handleDeliveryOptionChange(event) {
     setDeliveryOptionValue(event.target.value);
-  };
+    console.log(event.target.value);
+  }
 
-  const handleSubmit = (event) => {
+  function handleSubmit(event) {
     event.preventDefault();
     // handle form submission logic here
-  };
+  }
 
   const nameFields = [];
   for (let i = 0; i < numberOfPassengers; i++) {
     nameFields.push(
-      <Grid key={"name-" + i} item xs={12}>
-        <FormControl fullWidth>
-          <InputLabel>Name</InputLabel>
-          <Input type="text" />
-        </FormControl>
-      </Grid>
+      <div key={"name-" + i}>
+        <NameField></NameField>
+      </div>
     );
   }
-
   const flightInfoFields = [];
   for (let i = 0; i < numberOfFlights; i++) {
     flightInfoFields.push(
-      <Grid key={"flights-" + i} item xs={12}>
-        <FormSubtitle variant="subtitle1">Flight {i + 1}</FormSubtitle>
-        <FlightInfoField />
-      </Grid>
+      <div key={"flights-" + i}>
+        <FlightInfoField></FlightInfoField>
+      </div>
     );
   }
 
   const hotelFields = [];
   for (let i = 0; i < numberOfHotels; i++) {
     hotelFields.push(
-      <Grid key={i} item xs={12}>
-        <FormSubtitle variant="subtitle1">City {i + 1}</FormSubtitle>
-        <HotelField />
-      </Grid>
+      <div key={i}>
+        <HotelField></HotelField>
+      </div>
     );
   }
 
@@ -118,12 +89,13 @@ export default function ReservationForm() {
         <br></br>
         <InputLabel>RESERVATION FORM</InputLabel>
         <Stack spacing={2} margin={6}>
-          <EmailFields></EmailFields>
+          <EmailField></EmailField>
           <br></br>
           <Stack direction="row" spacing={2}>
             <InputLabel id="select-number-of-passengers-label">
-              Select number of passengers
+              Select number of passengers{" "}
               <Select
+                size="small"
                 labelId="select-number-of-passengers-label"
                 id="select-number-of-passengers-value"
                 value={numberOfPassengers}
@@ -139,9 +111,10 @@ export default function ReservationForm() {
           </Stack>
           <div>{nameFields}</div>
           <Stack direction="row" spacing={2}>
-            <InputLabel id="select-number-of-fights-label">
-              Select number of flight legs
+            <InputLabel size="small" id="select-number-of-fights-label">
+              Select number of flight legs{" "}
               <Select
+                size="small"
                 labelId="select-number-of-flights-label"
                 id="select-number-of-flights-value"
                 value={numberOfFlights}
@@ -163,7 +136,7 @@ export default function ReservationForm() {
               control={
                 <Switch
                   defaultChecked={addHotel}
-                  // onChange={toggleHotelOption}
+                  onChange={toggleHotelOption}
                 />
               }
               label="Add Hotel"
@@ -212,13 +185,14 @@ export default function ReservationForm() {
                 label="Within 24 hours"
               />
               <FormControlLabel
-                value="Within 48 hours"
+                value="Later Date"
                 control={<Radio />}
-                label="Within 48 hours"
+                label="Later Date"
               />
             </RadioGroup>
           </Stack>
         </Stack>
+
         <Button variant="contained" type="submit">
           Submit
         </Button>

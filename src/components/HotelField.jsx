@@ -16,14 +16,21 @@ export default function HotelField() {
 
   function formatDate(params) {
     console.log(params);
-    return <TextField {...params} />;
+    return <TextField size="small" {...params} />;
   }
   return (
     <div>
       <Stack direction="row" spacing={2}>
-        <TextField required id="outlined-required" label="City" />
+        <TextField
+          style={{ width: "30%" }}
+          size="small"
+          required
+          id="outlined-required"
+          label="City"
+        />
         <LocalizationProvider dateAdapter={AdapterDayjs}>
           <MobileDatePicker
+            style={{ width: "10%" }}
             margin="normal"
             minDate={minDate}
             label="Check-in"
@@ -35,13 +42,14 @@ export default function HotelField() {
             }}
           />
           <MobileDatePicker
+            style={{ width: "10%" }}
             margin="normal"
             minDate={minDate}
             label="Check-out"
             inputFormat="MM/DD/YYYY"
             value={value}
             onChange={handleChange}
-            renderInput={(params) => <TextField {...params} />}
+            renderInput={(params) => <TextField size="small" {...params} />}
           />
         </LocalizationProvider>
       </Stack>
