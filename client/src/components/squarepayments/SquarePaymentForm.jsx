@@ -1,11 +1,11 @@
 import styles from "../../styles/SquarePaymentForm.module.css";
 
-import { CreditCard, PaymentForm } from "react-square-web-payments-sdk";
+// import { CreditCard, PaymentForm } from "react-square-web-payments-sdk";
 
 export default function SquarePaymentForm() {
   return (
     <div className={styles.container}>
-      <PaymentForm
+      {/* <PaymentForm
         applicationId={process.env.SQUARE_APP_ID}
         cardTokenizeResponseReceived={async (token, verifiedBuyer) => {
           const response = await fetch("/api/pay", {
@@ -33,7 +33,7 @@ export default function SquarePaymentForm() {
             },
           }}
         />
-      </PaymentForm>
+      </PaymentForm> */}
     </div>
   );
 }
