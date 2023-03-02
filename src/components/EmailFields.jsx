@@ -16,7 +16,7 @@ const EmailField = () => {
   };
 
   const handleEmailBlur = () => {
-    if (!email || !/\S+@\S+\.\S+/.test(email) || email != confirmEmail) {
+    if (!email || !/\S+@\S+\.\S+/.test(email) || email !== confirmEmail) {
       setError(true);
     } else {
       setError(false);
