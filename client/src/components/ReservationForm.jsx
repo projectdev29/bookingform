@@ -30,6 +30,7 @@ export default function ReservationForm() {
 
   useEffect(() => {
     console.log("env variable value: " + process.env.TEST_ENV);
+    console.log("env variable value: " + process.env.REACT_APP_TEST_ENV);
   }, []);
   function handleNumberOfPassengersChange(event) {
     setNumberOfPassengers(Number(event.target.value));
