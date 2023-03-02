@@ -18,6 +18,7 @@ import EmailField from "./EmailFields";
 import FlightInfoField from "./FlightInfoField";
 import HotelField from "./HotelField";
 import NameField from "./NameField";
+import SquarePaymentForm from "./squarepayments/SquarePaymentForm";
 
 export default function ReservationForm() {
   const [numberOfPassengers, setNumberOfPassengers] = useState(1);
@@ -28,9 +29,7 @@ export default function ReservationForm() {
     useState("Within 24 hours");
 
   useEffect(() => {
-    fetch("/api")
-      .then((res) => res.json())
-      .then((data) => console.log(data.message));
+    console.log("env variable value: " + process.env.TEST_ENV);
   }, []);
   function handleNumberOfPassengersChange(event) {
     setNumberOfPassengers(Number(event.target.value));
@@ -202,7 +201,10 @@ export default function ReservationForm() {
         <Button variant="contained" type="submit">
           Submit
         </Button>
+        <p>here</p>
+        <SquarePaymentForm></SquarePaymentForm>
       </form>
+
       <br></br>
     </Box>
   );
