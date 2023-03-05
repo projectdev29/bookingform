@@ -1,24 +1,48 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import TextField from "@mui/material/TextField";
 import { InputLabel, MenuItem, Select, Stack } from "@mui/material";
+import { useContext } from "react";
+import { FormContext } from "./ReservationForm";
+import { useCallback } from "react";
 
-export default function NameField() {
+export default function NameField({ index }) {
   const [title, setTitle] = useState("");
+  const { passengerNames, setPassengerNames } = useContext(FormContext);
 
-  function handleTitleChange(event) {
-    console.log(event.target.value);
+  const handleTitleChange = useCallback((event) => {
     setTitle(event.target.value);
-  }
+    setPassengerNames((prevValue) => {
+      let newDetails = [...prevValue];
+      newDetails[index] = { ...newDetails[index], title: event.target.value };
+      return newDetails;
+    });
+  });
+
+  const handleFirstNameChange = useCallback((event) => {
+    setPassengerNames((prevValue) => {
+      let newDetails = [...prevValue];
+      newDetails[index] = { ...newDetails[index], first: event.target.value };
+      return newDetails;
+    });
+  });
+  const handleLastNameChange = useCallback((event) => {
+    setPassengerNames((prevValue) => {
+      let newDetails = [...prevValue];
+      newDetails[index] = { ...newDetails[index], last: event.target.value };
+      return newDetails;
+    });
+  });
+
   return (
     <div>
       <Stack direction="row" spacing={2}>
         <InputLabel id="select-title-label">
-          Title{" "}
           <Select
             labelId="select-title-label"
             id="select-label-value"
             value={title}
             size="small"
+            style={{ width: "60pt" }}
             onChange={handleTitleChange}
           >
             <MenuItem value=""></MenuItem>
@@ -45,20 +69,30 @@ export default function NameField() {
           required
           id="outlined-required"
           label="First Name"
+          value={
+            passengerNames[index] && passengerNames[index].first
+              ? passengerNames[index].first
+              : ""
+          }
+          onChange={handleFirstNameChange}
+          style={{ width: "25%" }}
         />
-        <TextField
-          size="small"
-          margin="normal"
-          id="outlined-middlename"
-          label="Middle Name"
-        />
+
         <TextField
           size="small"
           margin="normal"
           id="outlined-lastname"
           label="Last Name"
+          value={
+            passengerNames[index] && passengerNames[index].last
+              ? passengerNames[index].last
+              : ""
+          }
+          onChange={handleLastNameChange}
+          style={{ width: "25%" }}
         />
       </Stack>
+      <br></br>
     </div>
   );
 }

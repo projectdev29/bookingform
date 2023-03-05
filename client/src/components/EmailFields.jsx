@@ -1,22 +1,23 @@
-import React, { useState } from "react";
+import React, { useCallback, useContext, useState } from "react";
 
 import { Stack, TextField } from "@mui/material";
+import { FormContext } from "./ReservationForm";
 
 const EmailField = () => {
-  const [email, setEmail] = useState("");
-  const [confirmEmail, setConfirmEmail] = useState("");
+  // const [confirmEmail, setConfirmEmail] = useState("");
   const [error, setError] = useState(false);
+  const { email, setEmail } = useContext(FormContext);
 
-  const handleEmailChange = (event) => {
+  const handleEmailChange = useCallback((event) => {
     setEmail(event.target.value);
-  };
+  });
 
-  const handleConfirmEmailChange = (event) => {
-    setConfirmEmail(event.target.value);
-  };
+  // const handleConfirmEmailChange = (event) => {
+  //   setConfirmEmail(event.target.value);
+  // };
 
   const handleEmailBlur = () => {
-    if (!email || !/\S+@\S+\.\S+/.test(email) || email !== confirmEmail) {
+    if (!email || !/\S+@\S+\.\S+/.test(email)) {
       setError(true);
     } else {
       setError(false);
@@ -35,13 +36,13 @@ const EmailField = () => {
           error={error}
           helperText={error ? "Invalid email format" : ""}
         />
-        <TextField
+        {/* <TextField
           label="Confirm Email"
           size="small"
           onChange={handleConfirmEmailChange}
           onBlur={handleEmailBlur}
           value={confirmEmail}
-        />
+        /> */}
       </Stack>
     </div>
   );

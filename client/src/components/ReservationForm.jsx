@@ -18,195 +18,254 @@ import EmailField from "./EmailFields";
 import FlightInfoField from "./FlightInfoField";
 import HotelField from "./HotelField";
 import NameField from "./NameField";
+import dayjs from "dayjs";
 import SquarePaymentForm from "./squarepayments/SquarePaymentForm";
 
+import "./ReservationForm.css";
+import "../scripts/handlesubmit";
+import DeliveryOptions from "./DeliveryOptions";
+import AgreeStatements from "./AgreeStatements";
+import CouponField from "./Coupon";
+import { useCallback } from "react";
+import { createContext } from "react";
+import { handleFormSubmit } from "../scripts/handlesubmit";
+import { calculateTotal } from "../scripts/rules";
+
+export const FormContext = createContext();
+
 export default function ReservationForm() {
+  const [email, setEmail] = useState("");
   const [numberOfPassengers, setNumberOfPassengers] = useState(1);
   const [numberOfFlights, setNumberOfFlights] = useState(2);
   const [numberOfHotels, setNumberOfHotels] = useState(numberOfFlights - 1);
   const [addHotel, setAddHotel] = useState(false);
+  const [minDates, setMinDates] = useState([]);
+  const [minHotelDates, setMinHotelDates] = useState([]);
+  const [passengerNames, setPassengerNames] = useState([]);
+  const [flightDetails, setFlightDetails] = useState([]);
+  const [hotelDetails, setHotelDetails] = useState([]);
   const [deliveryOptionValue, setDeliveryOptionValue] =
     useState("Within 24 hours");
+  const [coupon, setCoupon] = useState("");
+  const [deliveryDate, setDeliveryDate] = useState();
+  const [specialInstructions, setSpecialInstructions] = useState("");
 
   useEffect(() => {
-    console.log("env variable value: " + process.env.TEST_ENV);
-    console.log("env variable value: " + process.env.REACT_APP_TEST_ENV);
+    let today = dayjs().add(8, "day");
+    const initialDates = [];
+    for (let i = 0; i < 8; i++) {
+      initialDates.push(today);
+    }
+    setMinDates(initialDates);
+    let initialHotelDates = [];
+    for (let i = 0; i < 8; i++) {
+      initialHotelDates.push([today, today]);
+    }
+    setMinHotelDates(initialHotelDates);
   }, []);
-  function handleNumberOfPassengersChange(event) {
+
+  const handleNumberOfPassengersChange = useCallback((event) => {
     setNumberOfPassengers(Number(event.target.value));
-  }
+  });
 
-  function toggleHotelOption(event) {
+  const toggleHotelOption = useCallback((event) => {
     setAddHotel(event.target.checked);
-  }
-  function handleNumberOfFlightsChange(event) {
+  });
+
+  const handleNumberOfFlightsChange = useCallback((event) => {
     setNumberOfFlights(Number(event.target.value));
-  }
+  });
 
-  function handleNumberOfHotelsChange(event) {
+  const handleNumberOfHotelsChange = useCallback((event) => {
     setNumberOfHotels(Number(event.target.value));
-  }
-
-  function handleDeliveryOptionChange(event) {
-    setDeliveryOptionValue(event.target.value);
-    console.log(event.target.value);
-  }
+  });
 
   function handleSubmit(event) {
     event.preventDefault();
-    // handle form submission logic here
-  }
 
-  const nameFields = [];
-  for (let i = 0; i < numberOfPassengers; i++) {
-    nameFields.push(
-      <div key={"name-" + i}>
-        <NameField></NameField>
-      </div>
-    );
-  }
-  const flightInfoFields = [];
-  for (let i = 0; i < numberOfFlights; i++) {
-    flightInfoFields.push(
-      <div key={"flights-" + i}>
-        <FlightInfoField></FlightInfoField>
-      </div>
-    );
-  }
+    fetch("/api/greeting")
+      .then((response) => response.json())
+      .then((data) => {
+        alert(data);
+      })
+      .catch((error) => console.error(error));
 
-  const hotelFields = [];
-  for (let i = 0; i < numberOfHotels; i++) {
-    hotelFields.push(
-      <div key={i}>
-        <HotelField></HotelField>
-      </div>
-    );
+    // let orderDetails = handleFormSubmit({
+    //   email,
+    //   numberOfPassengers,
+    //   passengerNames,
+    //   numberOfFlights,
+    //   flightDetails,
+    //   addHotel,
+    //   numberOfHotels,
+    //   hotelDetails,
+    //   deliveryOptionValue,
+    //   deliveryDate,
+    //   specialInstructions,
+    //   coupon,
+    // });
+
+    // let paymentSummary = calculateTotal({
+    //   passengers: numberOfPassengers,
+    //   flights: numberOfFlights,
+    //   hotels: numberOfHotels,
+    // });
+
+    // console.log(orderDetails + paymentSummary);
   }
 
   return (
-    <Box
-      sx={{
-        margin: 10,
-        width: "80%",
-        border: 1,
+    <FormContext.Provider
+      value={{
+        email,
+        setEmail,
+        passengerNames,
+        setPassengerNames,
+        flightDetails,
+        setFlightDetails,
+        hotelDetails,
+        setHotelDetails,
+        deliveryOptionValue,
+        setDeliveryOptionValue,
+        deliveryDate,
+        setDeliveryDate,
+        specialInstructions,
+        setSpecialInstructions,
+        coupon,
+        setCoupon,
       }}
     >
-      <form onSubmit={handleSubmit}>
+      <Box
+        sx={{
+          margin: 10,
+          width: "80%",
+          border: 1,
+        }}
+      >
+        <form className="my-form" onSubmit={handleSubmit}>
+          <br></br>
+          <InputLabel>Please fill out the order form below</InputLabel>
+          <Stack spacing={2} margin={6}>
+            <EmailField></EmailField>
+            <br></br>
+            <Stack direction="row" spacing={2}>
+              <InputLabel id="select-number-of-passengers-label">
+                Select number of passengers{" "}
+                <Select
+                  size="small"
+                  labelId="select-number-of-passengers-label"
+                  id="select-number-of-passengers-value"
+                  value={numberOfPassengers}
+                  onChange={handleNumberOfPassengersChange}
+                >
+                  {[...Array(8).keys()].map((i) => (
+                    <MenuItem
+                      key={"num-passengers-menu-item-" + i}
+                      value={i + 1}
+                    >
+                      {i + 1}
+                    </MenuItem>
+                  ))}
+                </Select>
+              </InputLabel>
+            </Stack>
+
+            {[...Array(numberOfPassengers).keys()].map((i) => (
+              <div key={"flight-" + i}>
+                <div key={"name-" + i}>
+                  <NameField index={i}></NameField>
+                </div>
+              </div>
+            ))}
+
+            <Stack direction="row" spacing={2}>
+              <InputLabel size="small" id="select-number-of-fights-label">
+                Select number of flight legs{" "}
+                <Select
+                  size="small"
+                  labelId="select-number-of-flights-label"
+                  id="select-number-of-flights-value"
+                  value={numberOfFlights}
+                  onChange={handleNumberOfFlightsChange}
+                >
+                  {[...Array(8).keys()].map((i) => (
+                    <MenuItem key={"num-flight-menu-item-" + i} value={i + 1}>
+                      {i + 1}
+                    </MenuItem>
+                  ))}
+                </Select>
+              </InputLabel>
+            </Stack>
+            <br></br>
+            {[...Array(numberOfFlights).keys()].map((i) => (
+              <div key={"flights-" + i}>
+                <FlightInfoField
+                  index={i}
+                  minDates={minDates}
+                  setMinDates={setMinDates}
+                ></FlightInfoField>
+              </div>
+            ))}
+            <br></br>
+
+            <FormGroup>
+              <FormControlLabel
+                control={
+                  <Switch checked={addHotel} onChange={toggleHotelOption} />
+                }
+                label="Add hotels to my order"
+              />
+            </FormGroup>
+            {addHotel ? (
+              <div>
+                <Stack direction="row" spacing={2}>
+                  <InputLabel id="select-number-of-hotels-label">
+                    Select number of cities{" "}
+                    <Select
+                      size="small"
+                      labelId="select-number-of-hotels-label"
+                      id="select-number-of-hotels-value"
+                      value={numberOfHotels}
+                      onChange={handleNumberOfHotelsChange}
+                    >
+                      {[...Array(8).keys()].map((i) => (
+                        <MenuItem
+                          key={"num-flights-menu-item-" + i}
+                          value={i + 1}
+                        >
+                          {i + 1}
+                        </MenuItem>
+                      ))}
+                    </Select>
+                  </InputLabel>
+                </Stack>
+
+                <br></br>
+                {[...Array(numberOfHotels).keys()].map((i) => (
+                  <div key={"flight-" + i}>
+                    <HotelField
+                      index={i}
+                      minHotelDates={minHotelDates}
+                      setMinHotelDates={setMinHotelDates}
+                    ></HotelField>
+                  </div>
+                ))}
+              </div>
+            ) : null}
+            <DeliveryOptions></DeliveryOptions>
+            <AgreeStatements></AgreeStatements>
+            <CouponField></CouponField>
+          </Stack>
+
+          <Button variant="contained" type="submit">
+            Submit
+          </Button>
+
+          {/* <SquarePaymentForm></SquarePaymentForm> */}
+        </form>
+
         <br></br>
-        <InputLabel>RESERVATION FORM</InputLabel>
-        <Stack spacing={2} margin={6}>
-          <EmailField></EmailField>
-          <br></br>
-          <Stack direction="row" spacing={2}>
-            <InputLabel id="select-number-of-passengers-label">
-              Select number of passengers{" "}
-              <Select
-                size="small"
-                labelId="select-number-of-passengers-label"
-                id="select-number-of-passengers-value"
-                value={numberOfPassengers}
-                onChange={handleNumberOfPassengersChange}
-              >
-                {[...Array(8).keys()].map((i) => (
-                  <MenuItem key={"num-passengers-menu-item-" + i} value={i + 1}>
-                    {i + 1}
-                  </MenuItem>
-                ))}
-              </Select>
-            </InputLabel>
-          </Stack>
-          <div>{nameFields}</div>
-          <Stack direction="row" spacing={2}>
-            <InputLabel size="small" id="select-number-of-fights-label">
-              Select number of flight legs{" "}
-              <Select
-                size="small"
-                labelId="select-number-of-flights-label"
-                id="select-number-of-flights-value"
-                value={numberOfFlights}
-                onChange={handleNumberOfFlightsChange}
-              >
-                {[...Array(8).keys()].map((i) => (
-                  <MenuItem key={"num-flight-menu-item-" + i} value={i + 1}>
-                    {i + 1}
-                  </MenuItem>
-                ))}
-              </Select>
-            </InputLabel>
-          </Stack>
-          <br></br>
-          <div>{flightInfoFields}</div>
-          <br></br>
-          <FormGroup>
-            <FormControlLabel
-              control={
-                <Switch
-                  defaultChecked={addHotel}
-                  onChange={toggleHotelOption}
-                />
-              }
-              label="Add Hotel"
-            />
-          </FormGroup>
-          {addHotel ? (
-            <div>
-              <Stack direction="row" spacing={2}>
-                <InputLabel id="select-number-of-hotels-label">
-                  Select number of cities
-                  <Select
-                    labelId="select-number-of-hotels-label"
-                    id="select-number-of-hotels-value"
-                    value={numberOfHotels}
-                    onChange={handleNumberOfHotelsChange}
-                  >
-                    {[...Array(numberOfFlights - 1).keys()].map((i) => (
-                      <MenuItem
-                        key={"num-flights-menu-item-" + i}
-                        value={i + 1}
-                      >
-                        {i + 1}
-                      </MenuItem>
-                    ))}
-                  </Select>
-                </InputLabel>
-              </Stack>
-
-              <br></br>
-              <div>{hotelFields}</div>
-            </div>
-          ) : null}
-
-          <Stack direction="column" textAlign="left" spacing={2}>
-            <FormLabel id="delivery-date-label">Delivery Option</FormLabel>
-            <RadioGroup
-              aria-labelledby="delivery-date-label"
-              defaultValue="Within 24 hours"
-              name="delivery-date-group"
-              value={deliveryOptionValue}
-              onChange={handleDeliveryOptionChange}
-            >
-              <FormControlLabel
-                value="Within 24 hours"
-                control={<Radio />}
-                label="Within 24 hours"
-              />
-              <FormControlLabel
-                value="Later Date"
-                control={<Radio />}
-                label="Later Date"
-              />
-            </RadioGroup>
-          </Stack>
-        </Stack>
-
-        <Button variant="contained" type="submit">
-          Submit
-        </Button>
-        <p>here</p>
-        <SquarePaymentForm></SquarePaymentForm>
-      </form>
-
-      <br></br>
-    </Box>
+      </Box>
+    </FormContext.Provider>
   );
 }

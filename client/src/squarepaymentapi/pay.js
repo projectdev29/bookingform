@@ -5,7 +5,7 @@ BigInt.prototype.toJSON = function () {
 };
 
 const { paymentsApi } = new Client({
-  accessToken: process.env.SQUARE_ACCESS_TOKEN,
+  accessToken: process.env.REACT_APP_SQUARE_ACCESS_TOKEN,
   environment: "sandbox",
 });
 
