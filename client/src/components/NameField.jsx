@@ -3,35 +3,33 @@ import TextField from "@mui/material/TextField";
 import { InputLabel, MenuItem, Select, Stack } from "@mui/material";
 import { useContext } from "react";
 import { FormContext } from "./ReservationForm";
-import { useCallback } from "react";
 
 export default function NameField({ index }) {
   const [title, setTitle] = useState("");
   const { passengerNames, setPassengerNames } = useContext(FormContext);
 
-  const handleTitleChange = useCallback((event) => {
+  const handleTitleChange = (event) => {
     setTitle(event.target.value);
     setPassengerNames((prevValue) => {
       let newDetails = [...prevValue];
       newDetails[index] = { ...newDetails[index], title: event.target.value };
       return newDetails;
     });
-  });
-
-  const handleFirstNameChange = useCallback((event) => {
+  };
+  const handleFirstNameChange = (event) => {
     setPassengerNames((prevValue) => {
       let newDetails = [...prevValue];
       newDetails[index] = { ...newDetails[index], first: event.target.value };
       return newDetails;
     });
-  });
-  const handleLastNameChange = useCallback((event) => {
+  };
+  const handleLastNameChange = (event) => {
     setPassengerNames((prevValue) => {
       let newDetails = [...prevValue];
       newDetails[index] = { ...newDetails[index], last: event.target.value };
       return newDetails;
     });
-  });
+  };
 
   return (
     <div>

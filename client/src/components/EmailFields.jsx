@@ -1,4 +1,4 @@
-import React, { useCallback, useContext, useState } from "react";
+import React, { useContext, useState } from "react";
 
 import { Stack, TextField } from "@mui/material";
 import { FormContext } from "./ReservationForm";
@@ -8,12 +8,9 @@ const EmailField = () => {
   const [error, setError] = useState(false);
   const { email, setEmail } = useContext(FormContext);
 
-  const handleEmailChange = useCallback(
-    (event) => {
-      setEmail(event.target.value);
-    },
-    [email]
-  );
+  const handleEmailChange = (event) => {
+    setEmail(event.target.value);
+  };
 
   // const handleConfirmEmailChange = (event) => {
   //   setConfirmEmail(event.target.value);
