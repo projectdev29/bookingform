@@ -47,6 +47,7 @@ app.get("/api/ticket", (req, res) => {
 });
 
 app.get("*", (req, res) => {
+  console.log("Hello from the app.");
   res.sendFile(path.resolve(__dirname, "../client/build", "index.html"));
 });
 
