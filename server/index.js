@@ -9,7 +9,9 @@ const PORT = process.env.PORT || 3001;
 const app = express();
 
 app.get("/api/greeting", (req, res) => {
-  init();
+  init().then(() => {
+    console.log("success");
+  });
   res.json({ message: "Hello from server!" });
 });
 
