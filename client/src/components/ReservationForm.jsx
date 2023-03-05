@@ -16,7 +16,7 @@ import FlightInfoField from "./FlightInfoField";
 import HotelField from "./HotelField";
 import NameField from "./NameField";
 import dayjs from "dayjs";
-import SquarePaymentForm from "./squarepayments/SquarePaymentForm";
+// import SquarePaymentForm from "./squarepayments/SquarePaymentForm";
 
 import "./ReservationForm.css";
 import "../scripts/handlesubmit";

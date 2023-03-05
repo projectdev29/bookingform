@@ -9,7 +9,7 @@ import {
 import { DesktopDatePicker, LocalizationProvider } from "@mui/x-date-pickers";
 import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
 
-import React, { useContext, useState } from "react";
+import React, { useContext } from "react";
 import { FormContext } from "./ReservationForm";
 
 const DeliveryOptions = () => {

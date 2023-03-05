@@ -1,20 +1,13 @@
-import React, { useState } from "react";
 import TextField from "@mui/material/TextField";
-import {
-  DesktopDatePicker,
-  LocalizationProvider,
-  MobileDatePicker,
-} from "@mui/x-date-pickers";
+import { DesktopDatePicker, LocalizationProvider } from "@mui/x-date-pickers";
 import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
 
 import dayjs from "dayjs";
 import { Stack } from "@mui/material";
 import { useContext } from "react";
 import { FormContext } from "./ReservationForm";
-import { useCallback } from "react";
 
 export default function HotelField({ index, minHotelDates, setMinHotelDates }) {
-  const minDate = dayjs().add(8, "day");
   const { hotelDetails, setHotelDetails } = useContext(FormContext);
 
   const handleCheckinChange = (newValue) => {
@@ -38,7 +31,7 @@ export default function HotelField({ index, minHotelDates, setMinHotelDates }) {
     });
   };
 
-  const handleCheckoutChange = useCallback((newValue) => {
+  const handleCheckoutChange = (newValue) => {
     setHotelDetails((prevValue) => {
       let newDetails = [...prevValue];
       newDetails[index] = { ...newDetails[index], checkoutDate: newValue };
@@ -55,15 +48,15 @@ export default function HotelField({ index, minHotelDates, setMinHotelDates }) {
       }
       return newMinDates;
     });
-  });
+  };
 
-  const handleCityChange = useCallback((newValue) => {
+  const handleCityChange = (newValue) => {
     setHotelDetails((prevValue) => {
       let newDetails = [...prevValue];
       newDetails[index] = { ...newDetails[index], city: newValue.target.value };
       return newDetails;
     });
-  });
+  };
 
   function formatDate(params) {
     return <TextField size="small" {...params} />;

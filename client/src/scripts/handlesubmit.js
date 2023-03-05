@@ -9,7 +9,6 @@ export const handleFormSubmit = (result) => {
     numberOfHotels,
     hotelDetails,
     deliveryOptionValue,
-    deliveryDate,
     specialInstructions,
     coupon,
   } = { ...result };
