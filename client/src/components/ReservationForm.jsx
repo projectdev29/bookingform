@@ -23,10 +23,9 @@ import "../scripts/handlesubmit";
 import DeliveryOptions from "./DeliveryOptions";
 import AgreeStatements from "./AgreeStatements";
 import CouponField from "./Coupon";
-import { useCallback } from "react";
 import { createContext } from "react";
-// import { handleFormSubmit } from "../scripts/handlesubmit";
-// import { calculateTotal } from "../scripts/rules";
+import { handleFormSubmit } from "../scripts/handlesubmit";
+import { calculateTotal } from "../scripts/rules";
 
 export const FormContext = createContext();
 
