@@ -1,16 +1,9 @@
 import {
-  Box,
-  Button,
   FormControlLabel,
-  FormGroup,
   FormLabel,
-  InputLabel,
-  MenuItem,
   Radio,
   RadioGroup,
-  Select,
   Stack,
-  Switch,
   TextField,
 } from "@mui/material";
 import { DesktopDatePicker, LocalizationProvider } from "@mui/x-date-pickers";
@@ -26,7 +19,7 @@ const DeliveryOptions = () => {
     deliveryOptionValue,
     setDeliveryOptionValue,
   } = useContext(FormContext);
-  const [error, setError] = useState(false);
+  // const [error, setError] = useState(false);
 
   function handleDeliveryOptionChange(event) {
     setDeliveryOptionValue(event.target.value);

@@ -8,9 +8,12 @@ const EmailField = () => {
   const [error, setError] = useState(false);
   const { email, setEmail } = useContext(FormContext);
 
-  const handleEmailChange = useCallback((event) => {
-    setEmail(event.target.value);
-  });
+  const handleEmailChange = useCallback(
+    (event) => {
+      setEmail(event.target.value);
+    },
+    [email]
+  );
 
   // const handleConfirmEmailChange = (event) => {
   //   setConfirmEmail(event.target.value);

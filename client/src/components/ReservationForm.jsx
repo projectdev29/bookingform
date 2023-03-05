@@ -3,11 +3,8 @@ import {
   Button,
   FormControlLabel,
   FormGroup,
-  FormLabel,
   InputLabel,
   MenuItem,
-  Radio,
-  RadioGroup,
   Select,
   Stack,
   Switch,
@@ -28,8 +25,8 @@ import AgreeStatements from "./AgreeStatements";
 import CouponField from "./Coupon";
 import { useCallback } from "react";
 import { createContext } from "react";
-import { handleFormSubmit } from "../scripts/handlesubmit";
-import { calculateTotal } from "../scripts/rules";
+// import { handleFormSubmit } from "../scripts/handlesubmit";
+// import { calculateTotal } from "../scripts/rules";
 
 export const FormContext = createContext();
 
@@ -64,55 +61,48 @@ export default function ReservationForm() {
     setMinHotelDates(initialHotelDates);
   }, []);
 
-  const handleNumberOfPassengersChange = useCallback((event) => {
+  const handleNumberOfPassengersChange = (event) => {
     setNumberOfPassengers(Number(event.target.value));
-  });
+  };
 
-  const toggleHotelOption = useCallback((event) => {
+  const toggleHotelOption = (event) => {
     setAddHotel(event.target.checked);
-  });
+  };
 
-  const handleNumberOfFlightsChange = useCallback((event) => {
+  const handleNumberOfFlightsChange = (event) => {
     setNumberOfFlights(Number(event.target.value));
-  });
+  };
 
-  const handleNumberOfHotelsChange = useCallback((event) => {
+  const handleNumberOfHotelsChange = (event) => {
     setNumberOfHotels(Number(event.target.value));
-  });
+  };
 
-  function handleSubmit(event) {
+  const handleSubmit = (event) => {
     event.preventDefault();
 
-    fetch("/api/greeting")
-      .then((response) => response.json())
-      .then((data) => {
-        alert(data);
-      })
-      .catch((error) => console.error(error));
+    let orderDetails = handleFormSubmit({
+      email,
+      numberOfPassengers,
+      passengerNames,
+      numberOfFlights,
+      flightDetails,
+      addHotel,
+      numberOfHotels,
+      hotelDetails,
+      deliveryOptionValue,
+      deliveryDate,
+      specialInstructions,
+      coupon,
+    });
 
-    // let orderDetails = handleFormSubmit({
-    //   email,
-    //   numberOfPassengers,
-    //   passengerNames,
-    //   numberOfFlights,
-    //   flightDetails,
-    //   addHotel,
-    //   numberOfHotels,
-    //   hotelDetails,
-    //   deliveryOptionValue,
-    //   deliveryDate,
-    //   specialInstructions,
-    //   coupon,
-    // });
+    let paymentSummary = calculateTotal({
+      passengers: numberOfPassengers,
+      flights: numberOfFlights,
+      hotels: numberOfHotels,
+    });
 
-    // let paymentSummary = calculateTotal({
-    //   passengers: numberOfPassengers,
-    //   flights: numberOfFlights,
-    //   hotels: numberOfHotels,
-    // });
-
-    // console.log(orderDetails + paymentSummary);
-  }
+    console.log(orderDetails + paymentSummary);
+  };
 
   return (
     <FormContext.Provider

@@ -5,7 +5,7 @@ import { FormContext } from "./ReservationForm";
 
 const CouponField = () => {
   const { coupon, setCoupon } = useContext(FormContext);
-  const [error, setError] = useState(false);
+  //   const [error, setError] = useState(false);
 
   const handleCouponChange = (event) => {
     setCoupon(event.target.value);
@@ -19,8 +19,8 @@ const CouponField = () => {
           size="small"
           value={coupon}
           onChange={handleCouponChange}
-          error={error}
-          helperText={error ? "Invalid coupon" : ""}
+          //   error={error}
+          //   helperText={error ? "Invalid coupon" : ""}
         />
         <Button variant="contained">Validate</Button>
       </Stack>

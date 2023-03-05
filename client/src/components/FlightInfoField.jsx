@@ -1,10 +1,5 @@
-import React, { useCallback, useState } from "react";
 import TextField from "@mui/material/TextField";
-import {
-  DesktopDatePicker,
-  LocalizationProvider,
-  MobileDatePicker,
-} from "@mui/x-date-pickers";
+import { DesktopDatePicker, LocalizationProvider } from "@mui/x-date-pickers";
 import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
 
 import dayjs from "dayjs";
@@ -16,7 +11,7 @@ export default function FlightInfoField({ index, minDates, setMinDates }) {
   // const [value, setValue] = useState(null);
   const { flightDetails, setFlightDetails } = useContext(FormContext);
 
-  const handleFlightDateChange = useCallback((newValue) => {
+  const handleFlightDateChange = (newValue) => {
     setFlightDetails((prevValue) => {
       let newDetails = [...prevValue];
       newDetails[index] = { ...newDetails[index], flightDate: newValue };
@@ -33,23 +28,26 @@ export default function FlightInfoField({ index, minDates, setMinDates }) {
       }
       return newMinDates;
     });
-  });
+  };
 
-  const handleFromChange = useCallback((newValue) => {
+  const handleFromChange = (newValue) => {
     setFlightDetails((prevValue) => {
       let newDetails = [...prevValue];
-      newDetails[index] = { ...newDetails[index], from: newValue.target.value };
+      newDetails[index] = {
+        ...newDetails[index],
+        from: newValue.target.value,
+      };
       return newDetails;
     });
-  });
+  };
 
-  const handleToChange = useCallback((newValue) => {
+  const handleToChange = (newValue) => {
     setFlightDetails((prevValue) => {
       let newDetails = [...prevValue];
       newDetails[index] = { ...newDetails[index], to: newValue.target.value };
       return newDetails;
     });
-  });
+  };
 
   return (
     <div>
