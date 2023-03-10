@@ -8,6 +8,7 @@ const bodyParser = require("body-parser");
 const { insert, update } = require("./database/mongodbhelper");
 const { createTicket } = require("./zendesk/tickethelper");
 const { calculateTotal } = require("./pricing/pricinghelper");
+const { createPayment } = require("./payments/pay");
 
 const PORT = process.env.PORT || 3001;
 
@@ -40,8 +41,9 @@ app.get("/api/postpayment", (req, res) => {
   createTicket({}, "");
 });
 
-app.get("/api/pay", (req, res) => {
-  res.json({ message: { succeeded: true } });
+app.get("/api/pay", async (req, res) => {
+  const result = await createPayment(req.body);
+  res.status(200).json(result);
 });
 
 app.get("*", (req, res) => {
