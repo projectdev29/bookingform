@@ -25,7 +25,6 @@ import AgreeStatements from "./AgreeStatements";
 import CouponField from "./Coupon";
 import { createContext } from "react";
 import { submitFormData, updateFormData } from "../scripts/handlesubmit";
-import { calculateTotal } from "../scripts/rules";
 import PaymentOptions from "./PaymentOptions";
 import PaymentSummary from "./PaymentSummary";
 

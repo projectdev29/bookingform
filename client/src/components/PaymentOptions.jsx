@@ -1,17 +1,11 @@
 import React, { useState } from "react";
-import TextField from "@mui/material/TextField";
 import {
   FormControlLabel,
   FormLabel,
-  InputLabel,
-  MenuItem,
   Radio,
   RadioGroup,
-  Select,
   Stack,
 } from "@mui/material";
-import { useContext } from "react";
-import { FormContext } from "./ReservationForm";
 import SquarePaymentForm from "./payments/SquarePaymentForm";
 import PaypalPaymentForm from "./payments/PaypalPaymentForm";
 
