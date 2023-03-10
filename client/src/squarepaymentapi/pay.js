@@ -1,3 +1,5 @@
+require("dotenv").config();
+
 import { Client } from "square";
 
 BigInt.prototype.toJSON = function () {

@@ -1,6 +1,6 @@
 var axios = require("axios");
 
-const createTicket = async (dat, collectionName) => {
+const createTicket = async () => {
   let data = JSON.stringify({
     ticket: {
       requester: {

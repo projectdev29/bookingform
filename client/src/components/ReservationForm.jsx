@@ -24,8 +24,10 @@ import DeliveryOptions from "./DeliveryOptions";
 import AgreeStatements from "./AgreeStatements";
 import CouponField from "./Coupon";
 import { createContext } from "react";
-import { handleFormSubmit } from "../scripts/handlesubmit";
+import { submitFormData, updateFormData } from "../scripts/handlesubmit";
 import { calculateTotal } from "../scripts/rules";
+import PaymentOptions from "./PaymentOptions";
+import PaymentSummary from "./PaymentSummary";
 
 export const FormContext = createContext();
 
@@ -45,6 +47,9 @@ export default function ReservationForm() {
   const [coupon, setCoupon] = useState("");
   const [deliveryDate, setDeliveryDate] = useState();
   const [specialInstructions, setSpecialInstructions] = useState("");
+  const [price, setPrice] = useState({ totalCost: 15 });
+  const [submissionId, setSubmissionId] = useState(null);
+  const [proceedToPayment, setProceedToPayment] = useState(false);
 
   useEffect(() => {
     let today = dayjs().add(8, "day");
@@ -60,26 +65,69 @@ export default function ReservationForm() {
     setMinHotelDates(initialHotelDates);
   }, []);
 
-  const handleNumberOfPassengersChange = (event) => {
-    setNumberOfPassengers(Number(event.target.value));
+  const setPriceFromServer = async (body) => {
+    let resp = await fetch(
+      process.env.REACT_APP_BACKEND_ENDPOINT + "/api/price",
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(body),
+      }
+    );
+    let jsonResp = await resp.json();
+    setPrice({ ...jsonResp.message });
+  };
+  const handleNumberOfPassengersChange = async (event) => {
+    const numPax = Number(event.target.value);
+    setNumberOfPassengers(numPax);
+    setPriceFromServer({
+      passengers: numPax,
+      flights: numberOfFlights,
+      hotels: numberOfHotels,
+      addHotel: addHotel,
+    });
   };
 
   const toggleHotelOption = (event) => {
-    setAddHotel(event.target.checked);
+    const addHotelOption = event.target.checked;
+    setAddHotel(addHotelOption);
+    setPriceFromServer({
+      passengers: numberOfPassengers,
+      flights: numberOfFlights,
+      hotels: numberOfHotels,
+      addHotel: addHotelOption,
+    });
   };
 
   const handleNumberOfFlightsChange = (event) => {
-    setNumberOfFlights(Number(event.target.value));
+    const numFlights = Number(event.target.value);
+    setNumberOfFlights(numFlights);
+    setPriceFromServer({
+      passengers: numberOfPassengers,
+      flights: numFlights,
+      hotels: numberOfHotels,
+      addHotel: addHotel,
+    });
   };
 
   const handleNumberOfHotelsChange = (event) => {
-    setNumberOfHotels(Number(event.target.value));
+    const numHotels = Number(event.target.value);
+    setNumberOfHotels(numHotels);
+    setPriceFromServer({
+      passengers: numberOfPassengers,
+      flights: numberOfFlights,
+      hotels: numHotels,
+      addHotel: addHotel,
+    });
   };
 
-  const handleSubmit = (event) => {
+  const handleSubmit = async (event) => {
     event.preventDefault();
 
-    let orderDetails = handleFormSubmit({
+    let submissionResult = {};
+    const formData = {
       email,
       numberOfPassengers,
       passengerNames,
@@ -92,15 +140,24 @@ export default function ReservationForm() {
       deliveryDate,
       specialInstructions,
       coupon,
-    });
-
-    let paymentSummary = calculateTotal({
-      passengers: numberOfPassengers,
-      flights: numberOfFlights,
-      hotels: numberOfHotels,
-    });
-
-    console.log(orderDetails + paymentSummary);
+      price,
+    };
+    if (submissionId === null) {
+      submissionResult = await submitFormData(formData);
+    } else {
+      submissionResult = await updateFormData(formData, submissionId);
+    }
+    if (submissionResult.message.succeeded) {
+      if (submissionResult.message.id) {
+        setSubmissionId(submissionResult.message.id);
+      } else {
+        console.log("couldnt find the order");
+      }
+      setProceedToPayment(true);
+    } else {
+      //TODO: show message to user
+      console.log("error submitting form: " + submissionResult.message.error);
+    }
   };
 
   return (
@@ -122,6 +179,8 @@ export default function ReservationForm() {
         setSpecialInstructions,
         coupon,
         setCoupon,
+        price,
+        submissionId,
       }}
     >
       <Box
@@ -131,128 +190,146 @@ export default function ReservationForm() {
           border: 1,
         }}
       >
-        <form className="my-form" onSubmit={handleSubmit}>
-          <br></br>
-          <InputLabel>Please fill out the order form below</InputLabel>
-          <Stack spacing={2} margin={6}>
-            <EmailField></EmailField>
+        {!proceedToPayment ? (
+          <form className="my-form" onSubmit={handleSubmit}>
             <br></br>
-            <Stack direction="row" spacing={2}>
-              <InputLabel id="select-number-of-passengers-label">
-                Select number of passengers{" "}
-                <Select
-                  size="small"
-                  labelId="select-number-of-passengers-label"
-                  id="select-number-of-passengers-value"
-                  value={numberOfPassengers}
-                  onChange={handleNumberOfPassengersChange}
-                >
-                  {[...Array(8).keys()].map((i) => (
-                    <MenuItem
-                      key={"num-passengers-menu-item-" + i}
-                      value={i + 1}
-                    >
-                      {i + 1}
-                    </MenuItem>
-                  ))}
-                </Select>
-              </InputLabel>
-            </Stack>
+            <InputLabel>Please fill out the order form below</InputLabel>
+            <InputLabel>Total Price: {price.totalCost}</InputLabel>
+            <Stack spacing={2} margin={6}>
+              <EmailField></EmailField>
+              <br></br>
+              <Stack direction="row" spacing={2}>
+                <InputLabel id="select-number-of-passengers-label">
+                  Select number of passengers{" "}
+                  <Select
+                    size="small"
+                    labelId="select-number-of-passengers-label"
+                    id="select-number-of-passengers-value"
+                    value={numberOfPassengers}
+                    onChange={handleNumberOfPassengersChange}
+                  >
+                    {[...Array(8).keys()].map((i) => (
+                      <MenuItem
+                        key={"num-passengers-menu-item-" + i}
+                        value={i + 1}
+                      >
+                        {i + 1}
+                      </MenuItem>
+                    ))}
+                  </Select>
+                </InputLabel>
+              </Stack>
 
-            {[...Array(numberOfPassengers).keys()].map((i) => (
-              <div key={"flight-" + i}>
-                <div key={"name-" + i}>
-                  <NameField index={i}></NameField>
-                </div>
-              </div>
-            ))}
-
-            <Stack direction="row" spacing={2}>
-              <InputLabel size="small" id="select-number-of-fights-label">
-                Select number of flight legs{" "}
-                <Select
-                  size="small"
-                  labelId="select-number-of-flights-label"
-                  id="select-number-of-flights-value"
-                  value={numberOfFlights}
-                  onChange={handleNumberOfFlightsChange}
-                >
-                  {[...Array(8).keys()].map((i) => (
-                    <MenuItem key={"num-flight-menu-item-" + i} value={i + 1}>
-                      {i + 1}
-                    </MenuItem>
-                  ))}
-                </Select>
-              </InputLabel>
-            </Stack>
-            <br></br>
-            {[...Array(numberOfFlights).keys()].map((i) => (
-              <div key={"flights-" + i}>
-                <FlightInfoField
-                  index={i}
-                  minDates={minDates}
-                  setMinDates={setMinDates}
-                ></FlightInfoField>
-              </div>
-            ))}
-            <br></br>
-
-            <FormGroup>
-              <FormControlLabel
-                control={
-                  <Switch checked={addHotel} onChange={toggleHotelOption} />
-                }
-                label="Add hotels to my order"
-              />
-            </FormGroup>
-            {addHotel ? (
-              <div>
-                <Stack direction="row" spacing={2}>
-                  <InputLabel id="select-number-of-hotels-label">
-                    Select number of cities{" "}
-                    <Select
-                      size="small"
-                      labelId="select-number-of-hotels-label"
-                      id="select-number-of-hotels-value"
-                      value={numberOfHotels}
-                      onChange={handleNumberOfHotelsChange}
-                    >
-                      {[...Array(8).keys()].map((i) => (
-                        <MenuItem
-                          key={"num-flights-menu-item-" + i}
-                          value={i + 1}
-                        >
-                          {i + 1}
-                        </MenuItem>
-                      ))}
-                    </Select>
-                  </InputLabel>
-                </Stack>
-
-                <br></br>
-                {[...Array(numberOfHotels).keys()].map((i) => (
-                  <div key={"flight-" + i}>
-                    <HotelField
-                      index={i}
-                      minHotelDates={minHotelDates}
-                      setMinHotelDates={setMinHotelDates}
-                    ></HotelField>
+              {[...Array(numberOfPassengers).keys()].map((i) => (
+                <div key={"flight-" + i}>
+                  <div key={"name-" + i}>
+                    <NameField index={i}></NameField>
                   </div>
-                ))}
-              </div>
-            ) : null}
-            <DeliveryOptions></DeliveryOptions>
-            <AgreeStatements></AgreeStatements>
-            <CouponField></CouponField>
-          </Stack>
+                </div>
+              ))}
 
-          <Button variant="contained" type="submit">
-            Submit
-          </Button>
+              <Stack direction="row" spacing={2}>
+                <InputLabel size="small" id="select-number-of-fights-label">
+                  Select number of flight legs{" "}
+                  <Select
+                    size="small"
+                    labelId="select-number-of-flights-label"
+                    id="select-number-of-flights-value"
+                    value={numberOfFlights}
+                    onChange={handleNumberOfFlightsChange}
+                  >
+                    {[...Array(8).keys()].map((i) => (
+                      <MenuItem key={"num-flight-menu-item-" + i} value={i + 1}>
+                        {i + 1}
+                      </MenuItem>
+                    ))}
+                  </Select>
+                </InputLabel>
+              </Stack>
+              <br></br>
+              {[...Array(numberOfFlights).keys()].map((i) => (
+                <div key={"flights-" + i}>
+                  <FlightInfoField
+                    index={i}
+                    minDates={minDates}
+                    setMinDates={setMinDates}
+                  ></FlightInfoField>
+                </div>
+              ))}
+              <br></br>
 
-          {/* <SquarePaymentForm></SquarePaymentForm> */}
-        </form>
+              <FormGroup>
+                <FormControlLabel
+                  control={
+                    <Switch checked={addHotel} onChange={toggleHotelOption} />
+                  }
+                  label="Add hotels to my order"
+                />
+              </FormGroup>
+              {addHotel ? (
+                <div>
+                  <Stack direction="row" spacing={2}>
+                    <InputLabel id="select-number-of-hotels-label">
+                      Select number of cities{" "}
+                      <Select
+                        size="small"
+                        labelId="select-number-of-hotels-label"
+                        id="select-number-of-hotels-value"
+                        value={numberOfHotels}
+                        onChange={handleNumberOfHotelsChange}
+                      >
+                        {[...Array(8).keys()].map((i) => (
+                          <MenuItem
+                            key={"num-flights-menu-item-" + i}
+                            value={i + 1}
+                          >
+                            {i + 1}
+                          </MenuItem>
+                        ))}
+                      </Select>
+                    </InputLabel>
+                  </Stack>
 
+                  <br></br>
+                  {[...Array(numberOfHotels).keys()].map((i) => (
+                    <div key={"flight-" + i}>
+                      <HotelField
+                        index={i}
+                        minHotelDates={minHotelDates}
+                        setMinHotelDates={setMinHotelDates}
+                      ></HotelField>
+                    </div>
+                  ))}
+                </div>
+              ) : null}
+              <DeliveryOptions></DeliveryOptions>
+              <AgreeStatements></AgreeStatements>
+              <CouponField></CouponField>
+              <br></br>
+              <PaymentSummary></PaymentSummary>
+            </Stack>
+
+            <Button variant="contained" type="submit">
+              PROCEED TO PAYMENT
+            </Button>
+
+            {/* <SquarePaymentForm></SquarePaymentForm> */}
+          </form>
+        ) : (
+          <div>
+            <Stack>
+              <PaymentOptions></PaymentOptions>
+              <PaymentSummary></PaymentSummary>
+              <Button
+                onClick={() => {
+                  setProceedToPayment(false);
+                }}
+              >
+                Back
+              </Button>
+            </Stack>
+          </div>
+        )}
         <br></br>
       </Box>
     </FormContext.Provider>

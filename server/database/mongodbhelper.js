@@ -1,4 +1,5 @@
 require("dotenv").config();
+const { ObjectId } = require("mongodb");
 
 const MongoClient = require("mongodb").MongoClient;
 
@@ -25,4 +26,29 @@ const insert = async (data, collectionName) => {
   return result;
 };
 
-module.exports = { insert };
+const update = async (data, id, collectionName) => {
+  let client = await MongoClient.connect(url);
+  const dbo = client.db(process.env.DB_NAME);
+  let result = {};
+  try {
+    const filter = { _id: new ObjectId(id) };
+
+    const upsertResult = await dbo
+      .collection(collectionName)
+      .updateOne(filter, { $set: { formData: data } });
+    result = {
+      succeeded: upsertResult.acknowledged,
+      id: upsertResult.upsertedId,
+    };
+  } catch (err) {
+    result = {
+      error: err,
+    };
+  }
+  await setTimeout(() => {
+    client.close();
+  }, 1000);
+  return result;
+};
+
+module.exports = { insert, update };

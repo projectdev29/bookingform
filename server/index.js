@@ -2,19 +2,41 @@ const path = require("path");
 require("dotenv").config();
 
 const express = require("express");
-const { insert } = require("./database/mongodbhelper");
+const cors = require("cors");
+const bodyParser = require("body-parser");
+
+const { insert, update } = require("./database/mongodbhelper");
 const { createTicket } = require("./zendesk/tickethelper");
+const { calculateTotal } = require("./pricing/pricinghelper");
 
 const PORT = process.env.PORT || 3001;
 
 const app = express();
 
-app.get("/api/submission", async (req, res) => {
-  let resp = await insert({ name: "foo", email: "bar" }, "FormSubmissions");
+app.use(cors());
+app.use(bodyParser.json());
+app.use(bodyParser.urlencoded({ extended: true }));
+
+// called when a form is submitted
+app.post("/api/submission", async (req, res) => {
+  let resp = await insert(req.body, "FormSubmissions");
   res.json({ message: resp });
 });
 
-app.get("/api/ticket", (req, res) => {
+// called when a form is updated
+app.post("/api/update", async (req, res) => {
+  let resp = await update(req.body.formData, req.body.id, "FormSubmissions");
+  res.json({ message: resp });
+});
+
+// called when customer changes number of passengers/hotel/flights
+app.post("/api/price", (req, res) => {
+  let resp = calculateTotal(req.body);
+  res.json({ message: resp });
+});
+
+//
+app.get("/api/postpayment", (req, res) => {
   createTicket({}, "");
 });
 

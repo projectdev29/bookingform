@@ -1,6 +1,5 @@
 .container {
   display: grid;
-  justify-content: center;
-  align-content: center;
-  /* width: "80%"; */
+  justify-content: left;
+  align-content: left;
 }
