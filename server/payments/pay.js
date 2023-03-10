@@ -21,6 +21,7 @@ const createPayment = async (body) => {
       amount: 100,
     },
   });
+  console.log("body: " + JSON.stringify(result));
   return result;
 };
 
