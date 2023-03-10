@@ -2,6 +2,7 @@ require("dotenv").config();
 
 var Square = require("square");
 const Client = Square.Client;
+const crypto = require("crypto");
 
 BigInt.prototype.toJSON = function () {
   return this.toString();
@@ -14,7 +15,7 @@ const { paymentsApi } = new Client({
 
 const createPayment = async (body) => {
   const { result } = await paymentsApi.createPayment({
-    idempotencyKey: randomUUID(),
+    idempotencyKey: crypto.randomUUID(),
     sourceId: body.sourceId,
     amountMoney: {
       currency: "USD",
