@@ -11,18 +11,21 @@ export default function SquarePaymentForm() {
       <PaymentForm
         applicationId={process.env.REACT_APP_SQUARE_APP_ID}
         cardTokenizeResponseReceived={async (token, verifiedBuyer) => {
-          const response = await fetch("/api/pay", {
-            method: "POST",
-            headers: {
-              "Content-type": "application/json",
-            },
-            body: JSON.stringify({
-              sourceId: token.token,
-            }),
-          });
+          const response = await fetch(
+            process.env.REACT_APP_BACKEND_ENDPOINT + "/api/pay",
+            {
+              method: "POST",
+              headers: {
+                "Content-type": "application/json",
+              },
+              body: JSON.stringify({
+                sourceId: token.token,
+              }),
+            }
+          );
           console.log(await response.json());
         }}
-        locationId="XXXXXXXXXX"
+        locationId={process.env.REACT_APP_SQUARE_LOCATION_ID}
       >
         <Stack direction="column" spacing={2}>
           <TextField label="Cardholder Name" fullWidth size="small" />

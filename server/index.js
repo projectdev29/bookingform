@@ -40,6 +40,10 @@ app.get("/api/postpayment", (req, res) => {
   createTicket({}, "");
 });
 
+app.get("/api/pay", (req, res) => {
+  res.json({ message: { succeeded: true } });
+});
+
 app.get("*", (req, res) => {
   res.sendFile(path.resolve(__dirname, "../client/build", "index.html"));
 });
