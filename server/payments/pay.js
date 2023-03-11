@@ -16,7 +16,7 @@ const { paymentsApi, customersApi } = new Client({
 
 const createPayment = async (body) => {
   try {
-    const { customerResult } = await customersApi.searchCustomers({
+    const customerResult = await customersApi.searchCustomers({
       query: { filter: { emailAddress: { exact: body.customer.email } } },
     });
     let customer = null;
