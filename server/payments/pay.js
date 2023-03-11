@@ -23,7 +23,7 @@ const createPayment = async (body) => {
     if (
       customerResult.result &&
       customerResult.result.customers &&
-      customerResult.result.customers.length() > 0
+      customerResult.result.customers.length > 0
     ) {
       console.log(JSON.stringify(customerResult.result.customers[0]));
       customer = customerResult.result.customers[0];
