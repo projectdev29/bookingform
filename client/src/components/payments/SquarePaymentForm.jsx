@@ -2,11 +2,13 @@ import styles from "../../styles/SquarePaymentForm.module.css";
 
 import { CreditCard, PaymentForm } from "react-square-web-payments-sdk";
 import { Stack } from "@mui/system";
-import { TextField } from "@mui/material";
+import { MenuItem, Select, TextField } from "@mui/material";
 import { useState } from "react";
+import CountryCodes from "../../scripts/countrycodes";
 
 export default function SquarePaymentForm() {
-  const [customer, setCustomer] = useState({});
+  const [customer, setCustomer] = useState({ address: { country: "US" } });
+
   const handleFirstNameChange = (event) => {
     setCustomer((prevValue) => {
       return {
@@ -87,12 +89,14 @@ export default function SquarePaymentForm() {
     });
   };
   const handleCountryChange = (event) => {
+    event.preventDefault();
     setCustomer((prevValue) => {
       return {
         ...prevValue,
+        countryName: event.target.value,
         address: {
           ...prevValue.address,
-          country: event.target.value,
+          country: CountryCodes.getISO2(event.target.value),
         },
       };
     });
@@ -171,12 +175,21 @@ export default function SquarePaymentForm() {
               size="small"
               onChange={handlePostalCodeChange}
             />
-            <TextField
-              label="Country"
-              fullWidth
+            <Select
+              labelId="select-title-label"
+              id="select-label-value"
+              value={
+                customer.countryName ? customer.countryName : "United States"
+              }
               size="small"
+              // style={{ width: "60pt" }}
               onChange={handleCountryChange}
-            />
+            >
+              <MenuItem value="Country">Country</MenuItem>
+              {CountryCodes.getCountries().map((c) => {
+                return <MenuItem value={c}>{c}</MenuItem>;
+              })}
+            </Select>
           </Stack>
 
           <CreditCard
