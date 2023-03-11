@@ -53,8 +53,12 @@ const createPayment = async (body) => {
     insert(result, "Payments");
     return result;
   } catch (error) {
-    console.log(error.body);
-    return error.body;
+    let err = error;
+    if (error.body) {
+      err = error.body;
+    }
+    console.log(err);
+    return err;
   }
 };
 

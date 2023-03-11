@@ -42,7 +42,6 @@ app.get("/api/postpayment", (req, res) => {
 });
 
 app.post("/api/pay", async (req, res) => {
-  console.log("request.body: " + JSON.stringify(req.body));
   const result = await createPayment(req.body);
   res.status(200).json(result);
 });
