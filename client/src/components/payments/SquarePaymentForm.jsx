@@ -3,8 +3,101 @@ import styles from "../../styles/SquarePaymentForm.module.css";
 import { CreditCard, PaymentForm } from "react-square-web-payments-sdk";
 import { Stack } from "@mui/system";
 import { TextField } from "@mui/material";
+import { useState } from "react";
 
 export default function SquarePaymentForm() {
+  const [customer, setCustomer] = useState({});
+  const handleFirstNameChange = (event) => {
+    setCustomer((prevValue) => {
+      return {
+        ...prevValue,
+        firstName: event.target.value,
+      };
+    });
+  };
+  const handleLastNameChange = (event) => {
+    setCustomer((prevValue) => {
+      return {
+        ...prevValue,
+        lastName: event.target.value,
+      };
+    });
+  };
+  const handleEmailChange = (event) => {
+    setCustomer((prevValue) => {
+      return {
+        ...prevValue,
+        email: event.target.value,
+      };
+    });
+  };
+  const handleAddressLine1Change = (event) => {
+    setCustomer((prevValue) => {
+      return {
+        ...prevValue,
+        address: {
+          ...prevValue.address,
+          addressLine1: event.target.value,
+        },
+      };
+    });
+  };
+  const handleAddressLine2Change = (event) => {
+    setCustomer((prevValue) => {
+      return {
+        ...prevValue,
+        address: {
+          ...prevValue.address,
+          addressLine2: event.target.value,
+        },
+      };
+    });
+  };
+  const handleCityChange = (event) => {
+    setCustomer((prevValue) => {
+      return {
+        ...prevValue,
+        address: {
+          ...prevValue.address,
+          locality: event.target.value,
+        },
+      };
+    });
+  };
+  const handleStateChange = (event) => {
+    setCustomer((prevValue) => {
+      return {
+        ...prevValue,
+        address: {
+          ...prevValue.address,
+          administrativeDistrictLevel1: event.target.value,
+        },
+      };
+    });
+  };
+  const handlePostalCodeChange = (event) => {
+    setCustomer((prevValue) => {
+      return {
+        ...prevValue,
+        address: {
+          ...prevValue.address,
+          postalCode: event.target.value,
+        },
+      };
+    });
+  };
+  const handleCountryChange = (event) => {
+    setCustomer((prevValue) => {
+      return {
+        ...prevValue,
+        address: {
+          ...prevValue.address,
+          country: event.target.value,
+        },
+      };
+    });
+  };
+
   return (
     <div className={styles.container}>
       <br></br>
@@ -20,6 +113,7 @@ export default function SquarePaymentForm() {
               },
               body: JSON.stringify({
                 sourceId: token.token,
+                customer: customer,
               }),
             }
           );
@@ -28,13 +122,61 @@ export default function SquarePaymentForm() {
         locationId={process.env.REACT_APP_SQUARE_LOCATION_ID}
       >
         <Stack direction="column" spacing={2}>
-          <TextField label="Cardholder Name" fullWidth size="small" />
-          <TextField label="Email" fullWidth size="small" />
-          <TextField label="Street address Line 1" fullWidth size="small" />
-          <TextField label="Street address Line 2" fullWidth size="small" />
+          <TextField
+            label="First Name"
+            fullWidth
+            size="small"
+            onChange={handleFirstNameChange}
+          />
+          <TextField
+            label="Last Name"
+            fullWidth
+            size="small"
+            onChange={handleLastNameChange}
+          />
+          <TextField
+            label="Email"
+            fullWidth
+            size="small"
+            onChange={handleEmailChange}
+          />
+          <TextField
+            label="Street address Line 1"
+            fullWidth
+            size="small"
+            onChange={handleAddressLine1Change}
+          />
+          <TextField
+            label="Street address Line 2"
+            fullWidth
+            size="small"
+            onChange={handleAddressLine2Change}
+          />
           <Stack direction="row" spacing={2}>
-            <TextField label="City" fullWidth size="small" />
-            <TextField label="Country" fullWidth size="small" />
+            <TextField
+              label="City"
+              fullWidth
+              size="small"
+              onChange={handleCityChange}
+            />
+            <TextField
+              label="State/Province"
+              fullWidth
+              size="small"
+              onChange={handleStateChange}
+            />
+            <TextField
+              label="Postal Code"
+              fullWidth
+              size="small"
+              onChange={handlePostalCodeChange}
+            />
+            <TextField
+              label="Country"
+              fullWidth
+              size="small"
+              onChange={handleCountryChange}
+            />
           </Stack>
 
           <CreditCard
