@@ -36,7 +36,12 @@ const createPayment = async (body) => {
         address: body.customer.address,
       });
 
-      console.log(response.result);
+      if (response.result.customer) {
+        customer = response.result.customer;
+      } else {
+        console.log(response.result.errors);
+        return response.result.errors;
+      }
     }
 
     const { result } = await paymentsApi.createPayment({
@@ -49,6 +54,7 @@ const createPayment = async (body) => {
       referenceId: "BFV-123456",
       buyerEmailAddress: body.customer.email,
       billingAddress: body.customer.address,
+      customerId: customer.id,
     });
     insert(result, "Payments");
     return result;
