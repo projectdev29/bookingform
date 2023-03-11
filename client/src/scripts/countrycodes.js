@@ -1,4 +1,3 @@
-"use strict";
 var countryCodes = require("./countrycodes.json"),
   Map = require("collections/map");
 var countryCodesMap = new Map();
