@@ -20,8 +20,13 @@ app.use(bodyParser.urlencoded({ extended: true }));
 
 // called when a form is submitted
 app.post("/api/submission", async (req, res) => {
-  let resp = await insert(req.body, "FormSubmissions");
-  res.json({ message: resp });
+  const orderNumber = "BFV-" + Math.round(Date.now() / 1000);
+  const submission = {
+    ...req.body,
+    orderNumber: orderNumber,
+  };
+  let resp = await insert(submission, "FormSubmissions");
+  res.json({ message: { ...resp, orderNumber: orderNumber } });
 });
 
 // called when a form is updated

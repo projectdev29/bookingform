@@ -51,4 +51,33 @@ const update = async (data, id, collectionName) => {
   return result;
 };
 
-module.exports = { insert, update };
+const find = async (id, collectionName) => {
+  let client = await MongoClient.connect(url);
+  const dbo = client.db(process.env.DB_NAME);
+  let result = {};
+  try {
+    const filter = { _id: new ObjectId(id) };
+    result = await dbo.collection(collectionName).findOne(filter);
+    if (result == null) {
+      result = {
+        notFound: true,
+        error:
+          '{"errors": [{"category": "INTERNAL", "code": "INTERNAL", "detail": "Could not find the submission id. Please contact support for assistance."}]}',
+      };
+    }
+  } catch (err) {
+    result = {
+      notFound: true,
+      error:
+        '{"errors": [{"category": "INTERNAL", "code": "INTERNAL", "detail": "Please contact support for assistance. Error: ' +
+        err.errmsg +
+        '"}]}',
+    };
+  }
+  await setTimeout(() => {
+    client.close();
+  }, 1000);
+  return result;
+};
+
+module.exports = { insert, update, find };

@@ -3,7 +3,7 @@ require("dotenv").config();
 var Square = require("square");
 const Client = Square.Client;
 const crypto = require("crypto");
-const { insert } = require("../database/mongodbhelper");
+const { insert, find } = require("../database/mongodbhelper");
 
 BigInt.prototype.toJSON = function () {
   return this.toString();
@@ -16,6 +16,13 @@ const { paymentsApi, customersApi } = new Client({
 
 const createPayment = async (body) => {
   try {
+    const submission = await find(body.submissionId, "FormSubmissions");
+    if (submission.notFound) {
+      console.log(
+        "This should not happen. Submission Id not found: " + body.submissionId
+      );
+      return submission.error;
+    }
     const customerResult = await customersApi.searchCustomers({
       query: { filter: { emailAddress: { exact: body.customer.email } } },
     });
@@ -51,7 +58,7 @@ const createPayment = async (body) => {
         currency: "USD",
         amount: 100,
       },
-      referenceId: "BFV-123456",
+      referenceId: submission.orderNumber,
       buyerEmailAddress: body.customer.email,
       billingAddress: body.customer.address,
       customerId: customer.id,
