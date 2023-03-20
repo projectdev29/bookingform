@@ -49,8 +49,11 @@ app.get("/api/postpayment", (req, res) => {
 
 app.post("/api/pay", async (req, res) => {
   const result = await createPayment(req.body);
-  // TODO: call zendesk to create a ticket
-  // TODO: check if email needs to be sent. we could probably use zendesk for that.
+  res.status(200).json(result);
+});
+
+app.post("/api/ticket", async (req, res) => {
+  const result = createTicket(req.body.submissionId);
   res.status(200).json(result);
 });
 
