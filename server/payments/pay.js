@@ -3,7 +3,7 @@ require("dotenv").config();
 var Square = require("square");
 const Client = Square.Client;
 const crypto = require("crypto");
-const { insert, find } = require("../database/mongodbhelper");
+const { insert, findById } = require("../database/mongodbhelper");
 
 BigInt.prototype.toJSON = function () {
   return this.toString();
@@ -16,7 +16,7 @@ const { paymentsApi, customersApi } = new Client({
 
 const createPayment = async (body) => {
   try {
-    const submission = await find(body.submissionId, "FormSubmissions");
+    const submission = await findById(body.submissionId, "FormSubmissions");
     if (submission.notFound) {
       console.log(
         "This should not happen. Submission Id not found: " + body.submissionId
@@ -56,6 +56,7 @@ const createPayment = async (body) => {
       sourceId: body.sourceId,
       amountMoney: {
         currency: "USD",
+        //TODO: validate that the amount in the db matches what the client is passing
         amount: 100,
       },
       referenceId: submission.orderNumber,

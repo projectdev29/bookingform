@@ -9,6 +9,7 @@ const { insert, update } = require("./database/mongodbhelper");
 const { createTicket } = require("./zendesk/tickethelper");
 const { calculateTotal } = require("./pricing/pricinghelper");
 const { createPayment } = require("./payments/pay");
+const { validateCoupon } = require("./coupons/couponhelper");
 
 const PORT = process.env.PORT || 3001;
 
@@ -48,7 +49,15 @@ app.get("/api/postpayment", (req, res) => {
 
 app.post("/api/pay", async (req, res) => {
   const result = await createPayment(req.body);
+  // TODO: call zendesk to create a ticket
+  // TODO: check if email needs to be sent. we could probably use zendesk for that.
   res.status(200).json(result);
+});
+
+app.get("/api/coupon", async (req, res) => {
+  const { email, coupon } = req.query;
+  const result = await validateCoupon(coupon, email);
+  res.send(result);
 });
 
 app.get("*", (req, res) => {

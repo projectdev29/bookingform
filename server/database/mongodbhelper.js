@@ -20,7 +20,7 @@ const insert = async (data, collectionName) => {
       error: err,
     };
   }
-  await setTimeout(() => {
+  setTimeout(() => {
     client.close();
   }, 1000);
   return result;
@@ -45,13 +45,13 @@ const update = async (data, id, collectionName) => {
       error: err,
     };
   }
-  await setTimeout(() => {
+  setTimeout(() => {
     client.close();
   }, 1000);
   return result;
 };
 
-const find = async (id, collectionName) => {
+const findById = async (id, collectionName) => {
   let client = await MongoClient.connect(url);
   const dbo = client.db(process.env.DB_NAME);
   let result = {};
@@ -62,7 +62,7 @@ const find = async (id, collectionName) => {
       result = {
         notFound: true,
         error:
-          '{"errors": [{"category": "INTERNAL", "code": "INTERNAL", "detail": "Could not find the submission id. Please contact support for assistance."}]}',
+          '{"errors": [{"category": "INTERNAL", "code": "INTERNAL", "detail": "Could not find the id. Please contact support for assistance."}]}',
       };
     }
   } catch (err) {
@@ -74,10 +74,31 @@ const find = async (id, collectionName) => {
         '"}]}',
     };
   }
-  await setTimeout(() => {
+  setTimeout(() => {
     client.close();
   }, 1000);
   return result;
 };
 
-module.exports = { insert, update, find };
+const find = async (filter, collectionName) => {
+  let client = await MongoClient.connect(url);
+  const dbo = client.db(process.env.DB_NAME);
+  let result = {};
+  try {
+    result = await dbo.collection(collectionName).findOne(filter);
+  } catch (err) {
+    result = {
+      notFound: true,
+      error:
+        '{"errors": [{"category": "INTERNAL", "code": "INTERNAL", "detail": "Please contact support for assistance. Error: ' +
+        err.errmsg +
+        '"}]}',
+    };
+  }
+  setTimeout(() => {
+    client.close();
+  }, 1000);
+  return result;
+};
+
+module.exports = { insert, update, find, findById };
