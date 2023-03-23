@@ -69,7 +69,7 @@ const createPayment = async (body) => {
       buyerEmailAddress: body.customer.email,
       billingAddress: body.customer.address,
       customerId: customer.id,
-      statementDescriptionIdentifier: "Reservation - Booking For Visa",
+      note: "Reservation - Booking For Visa",
     });
     insert(result, "Payments");
     return result;
