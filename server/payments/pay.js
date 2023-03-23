@@ -23,6 +23,14 @@ const createPayment = async (body) => {
       );
       return submission.error;
     }
+    if (
+      !submission.formData ||
+      !submission.formData.price ||
+      !submission.formData.price.totalCost ||
+      submission.formData.price.totalCost < 0
+    ) {
+      return '{"errors": [{"category": "INTERNAL", "code": "INTERNAL", "detail": "Invalid price for the order. Please contact support for assistance."}]}';
+    }
     const customerResult = await customersApi.searchCustomers({
       query: { filter: { emailAddress: { exact: body.customer.email } } },
     });
@@ -32,7 +40,6 @@ const createPayment = async (body) => {
       customerResult.result.customers &&
       customerResult.result.customers.length > 0
     ) {
-      console.log(JSON.stringify(customerResult.result.customers[0]));
       customer = customerResult.result.customers[0];
     }
     if (customer === null) {
@@ -56,8 +63,7 @@ const createPayment = async (body) => {
       sourceId: body.sourceId,
       amountMoney: {
         currency: "USD",
-        //TODO: validate that the amount in the db matches what the client is passing
-        amount: 100,
+        amount: submission.formData.price.totalCost * 100,
       },
       referenceId: submission.orderNumber,
       buyerEmailAddress: body.customer.email,
