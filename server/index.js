@@ -10,6 +10,7 @@ const { createTicket } = require("./zendesk/tickethelper");
 const { calculateTotal } = require("./pricing/pricinghelper");
 const { createPayment } = require("./payments/pay");
 const { validateCoupon } = require("./coupons/couponhelper");
+const { createOrder, capturePayment } = require("./payments/paypal");
 
 const PORT = process.env.PORT || 3001;
 
@@ -25,6 +26,7 @@ app.post("/api/submission", async (req, res) => {
   const submission = {
     ...req.body,
     orderNumber: orderNumber,
+    createdAt: new Date(),
   };
   let resp = await insert(submission, "FormSubmissions");
   res.json({ message: { ...resp, orderNumber: orderNumber } });
@@ -61,6 +63,19 @@ app.get("/api/coupon", async (req, res) => {
   const { email, coupon } = req.query;
   const result = await validateCoupon(coupon, email);
   res.send(result);
+});
+
+app.post("/api/create-paypal-order", async (req, res) => {
+  const order = await createOrder(req.body);
+  res.json(order);
+});
+
+// capture payment & store order information or fullfill order
+app.post("/api/capture-paypal-order", async (req, res) => {
+  const { orderID } = req.body;
+  const captureData = await capturePayment(orderID);
+  // TODO: store payment information such as the transaction ID
+  res.json(captureData);
 });
 
 app.get("*", (req, res) => {

@@ -71,7 +71,8 @@ const createPayment = async (body) => {
       customerId: customer.id,
       note: "Reservation - Booking For Visa",
     });
-    insert(result, "Payments");
+    //TODO: decide if we need payments data as it should already be available
+    // insert(result, "Payments");
     return result;
   } catch (error) {
     let err = error;

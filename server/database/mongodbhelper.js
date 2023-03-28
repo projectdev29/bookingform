@@ -38,7 +38,6 @@ const update = async (data, id, collectionName) => {
       .updateOne(filter, { $set: { formData: data } });
     result = {
       succeeded: upsertResult.acknowledged,
-      id: upsertResult.upsertedId,
     };
   } catch (err) {
     result = {
