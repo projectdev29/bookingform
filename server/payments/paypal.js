@@ -81,7 +81,7 @@ async function createOrder(body) {
 // use the orders api to capture payment for an order
 async function capturePayment(orderId) {
   const accessToken = await generateAccessToken();
-  const url = `${baseURL.sandbox}/v2/checkout/orders/${orderId}/capture`;
+  const url = `${baseURL.production}/v2/checkout/orders/${orderId}/capture`;
 
   const response = await axios.post(url, null, {
     headers: {
@@ -100,7 +100,7 @@ async function generateAccessToken() {
     "base64"
   );
   const response = await axios.post(
-    `${baseURL.sandbox}/v1/oauth2/token`,
+    `${baseURL.production}/v1/oauth2/token`,
     "grant_type=client_credentials",
     {
       headers: {
