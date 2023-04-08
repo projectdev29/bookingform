@@ -2,7 +2,7 @@ const dayjs = require("dayjs");
 const juice = require("juice");
 const generateHtml = (formSubmission) => {
   let html_body =
-    "<style>tr:nth-child(odd) {background-color: #f2f2f2;} td:first-child {width: 30%;} td:last-child {width: 70%;}</style><table><tbody><tr><td><b> Email </b></td><td>" +
+    "<style>tr:nth-child(odd) {background-color: #f2f2f2;} td:first-child {width: 20%;} td:last-child {width: 80%;}</style><table><tbody><tr><td><b> Email </b></td><td>" +
     formSubmission.formData.email +
     "</td></tr><tr><td><b> Number of travelers </b></td><td>" +
     formSubmission.formData.numberOfPassengers +
