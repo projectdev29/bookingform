@@ -10,17 +10,24 @@ const generateHtml = (formSubmission) => {
   for (let i = 0; i < formSubmission.formData.numberOfPassengers; i++) {
     html_body += "<tr><td><b> Traveler Name </b></td><td>";
     let nameObj = formSubmission.formData.passengerNames[i];
-    let fullName = nameObj.title
-      ? nameObj.title + " "
-      : "" +
-        nameObj.firstName +
-        " " +
-        nameObj.lastName +
-        "<br>" +
-        nameObj.lastName +
-        ", " +
-        nameObj.firstName +
-        "</td></tr>";
+    let title =
+      formSubmission.formData.titles &&
+      formSubmission.formData.titles.length > i
+        ? formSubmission.formData.titles[i] + " "
+        : "";
+    if (!title) {
+      title = "";
+    }
+    let fullName =
+      title +
+      nameObj.firstName +
+      " " +
+      nameObj.lastName +
+      "<br>" +
+      nameObj.lastName +
+      ", " +
+      nameObj.firstName +
+      "</td></tr>";
     html_body += fullName;
   }
   html_body +=
