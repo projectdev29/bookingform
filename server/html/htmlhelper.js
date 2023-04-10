@@ -43,7 +43,9 @@ const generateHtml = (formSubmission) => {
       "</td></tr><tr><td><b> Flying to </b></td><td>" +
       flightDetailsObj.to +
       "</td></tr><tr><td><b> Date </b></td><td>" +
-      dayjs(flightDetailsObj.flightDate).format("MMM D YYYY") +
+      flightDetailsObj.flightDateFormatted +
+      //? flightDetailsObj.formattedFlightDate
+      //: "placeholder" + //dayjs(flightDetailsObj.flightDate).format("MMM D YYYY") +
       "</td></tr>";
   }
   if (formSubmission.formData.addHotel) {
@@ -59,9 +61,9 @@ const generateHtml = (formSubmission) => {
         "<tr><td><b> City </b></td><td>" +
         hotelDetailsObj.city +
         "</td></tr><tr><td><b> Check-in date </b></td><td>" +
-        dayjs(hotelDetailsObj.inDate).format("MMM D YYYY") +
+        hotelDetailsObj.inDateFormatted + // ? dayjs(hotelDetailsObj.inDate).format("MMM D YYYY") +
         "</td></tr><tr><td><b> Check-out date </b></td><td>" +
-        dayjs(hotelDetailsObj.outDate).format("MMM D YYYY") +
+        hotelDetailsObj.outDateFormatted + //dayjs(hotelDetailsObj.outDate).format("MMM D YYYY") +
         "</td></tr>";
     }
   }
@@ -75,7 +77,8 @@ const generateHtml = (formSubmission) => {
   if (formSubmission.formData.deliveryOptionValue === "Later Date") {
     html_body +=
       "<tr><td><b> Delivery Date </b></td><td>" +
-      dayjs(formSubmission.formData.deliveryDate).format("MMM D YYYY") +
+      formSubmission.formData.deliveryDate +
+      // dayjs(formSubmission.formData.deliveryDate).format("MMM D YYYY") +
       "" +
       "</td></tr>";
   }
