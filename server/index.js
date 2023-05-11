@@ -9,7 +9,7 @@ const { insert, update } = require("./database/mongodbhelper");
 const { createTicket } = require("./zendesk/tickethelper");
 const { calculateTotal } = require("./pricing/pricinghelper");
 const { createPayment } = require("./payments/pay");
-const { validateCoupon } = require("./coupons/couponhelper");
+const { validateCoupon, markCouponAsUsed } = require("./coupons/couponhelper");
 const { createOrder, capturePayment } = require("./payments/paypal");
 
 const PORT = process.env.PORT || 3001;
@@ -55,6 +55,7 @@ app.post("/api/pay", async (req, res) => {
 });
 
 app.post("/api/ticket", async (req, res) => {
+  await markCouponAsUsed(req.body.coupon);
   const result = createTicket(req.body.submissionId);
   res.status(200).json(result);
 });

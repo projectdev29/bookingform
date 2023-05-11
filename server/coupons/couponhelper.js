@@ -1,4 +1,4 @@
-const { find } = require("../database/mongodbhelper");
+const { find, updateCoupon } = require("../database/mongodbhelper");
 
 const validateCoupon = async (coupon, email) => {
   const couponFromDb = await find({ coupon: coupon }, "Coupons");
@@ -20,4 +20,31 @@ const validateCoupon = async (coupon, email) => {
   return { isValid: true, discount: couponFromDb.discount };
 };
 
-module.exports = { validateCoupon };
+const markCouponAsUsed = async (coupon) => {
+  try {
+    const couponFromDb = await find({ coupon: coupon }, "Coupons");
+    if (!couponFromDb || couponFromDb == null) {
+      return {
+        result: "no op",
+      };
+    } else if (couponFromDb.isUsed) {
+      return {
+        result: "The coupon has already been used.",
+      };
+    }
+    let updatedCoupon = {
+      ...couponFromDb,
+      isUsed: true,
+    };
+    await updateCoupon(updatedCoupon, updatedCoupon._id, "Coupons");
+    return { result: "success" };
+  } catch (err) {
+    console.log("error in marking coupon as used: ");
+    console.log(err);
+    return {
+      result: err,
+    };
+  }
+};
+
+module.exports = { validateCoupon, markCouponAsUsed };

@@ -50,6 +50,30 @@ const update = async (data, id, collectionName) => {
   return result;
 };
 
+const updateCoupon = async (data, id, collectionName) => {
+  let client = await MongoClient.connect(url);
+  const dbo = client.db(process.env.DB_NAME);
+  let result = {};
+  try {
+    const filter = { _id: new ObjectId(id) };
+
+    const upsertResult = await dbo
+      .collection(collectionName)
+      .updateOne(filter, { $set: data });
+    result = {
+      succeeded: upsertResult.acknowledged,
+    };
+  } catch (err) {
+    result = {
+      error: err,
+    };
+  }
+  setTimeout(() => {
+    client.close();
+  }, 1000);
+  return result;
+};
+
 const findById = async (id, collectionName) => {
   let client = await MongoClient.connect(url);
   const dbo = client.db(process.env.DB_NAME);
@@ -100,4 +124,4 @@ const find = async (filter, collectionName) => {
   return result;
 };
 
-module.exports = { insert, update, find, findById };
+module.exports = { insert, update, updateCoupon, find, findById };
