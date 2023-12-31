@@ -78,6 +78,71 @@ async function createOrder(body) {
   }
 }
 
+async function createOrderForGiftCertificate(body) {
+  try {
+    const submission = await findById(body.submissionId, "GiftCertificates");
+    if (submission.notFound) {
+      console.log(
+        "This should not happen. Submission Id not found: " + body.submissionId
+      );
+      return submission.error;
+    }
+    if (!submission.amount || submission.amount < 0) {
+      return '{"errors": [{"category": "INTERNAL", "code": "INTERNAL", "detail": "Invalid gift certificate amount. Please contact support for assistance."}]}';
+    }
+
+    const accessToken = await generateAccessToken();
+    const url = `${baseURL.production}/v2/checkout/orders`;
+
+    const response = await axios.post(
+      url,
+      {
+        intent: "CAPTURE",
+        purchase_units: [
+          {
+            description: "Gift Certificate - Booking For Visa",
+            amount: {
+              currency_code: "USD",
+              value: submission.amount.toString(),
+              breakdown: {
+                item_total: {
+                  currency_code: "USD",
+                  value: submission.amount.toString(),
+                },
+              },
+            },
+            items: [
+              {
+                name: "Gift Certificate - Booking For Visa",
+                quantity: "1",
+                unit_amount: {
+                  currency_code: "USD",
+                  value: submission.amount.toString(),
+                },
+              },
+            ],
+          },
+        ],
+      },
+      {
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${accessToken}`,
+        },
+      }
+    );
+    //const transaction = orderData.purchase_units[0].payments.captures[0];
+    return response.data;
+  } catch (error) {
+    let err = error;
+    if (error.body) {
+      err = error.body;
+    }
+    console.log(err);
+    return err;
+  }
+}
+
 // use the orders api to capture payment for an order
 async function capturePayment(orderId) {
   const accessToken = await generateAccessToken();
@@ -113,4 +178,4 @@ async function generateAccessToken() {
   return response.data.access_token;
 }
 
-module.exports = { createOrder, capturePayment };
+module.exports = { createOrder, createOrderForGiftCertificate, capturePayment };

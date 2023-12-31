@@ -5,12 +5,29 @@ const express = require("express");
 const cors = require("cors");
 const bodyParser = require("body-parser");
 
-const { insert, update } = require("./database/mongodbhelper");
+const {
+  insert,
+  update,
+  updateGiftCertificate,
+} = require("./database/mongodbhelper");
 const { createTicket } = require("./zendesk/tickethelper");
 const { calculateTotal } = require("./pricing/pricinghelper");
-const { createPayment } = require("./payments/pay");
+const {
+  createPayment,
+  createPaymentForGiftCertificate,
+} = require("./payments/pay");
 const { validateCoupon, markCouponAsUsed } = require("./coupons/couponhelper");
-const { createOrder, capturePayment } = require("./payments/paypal");
+const {
+  createOrder,
+  capturePayment,
+  createOrderForGiftCertificate,
+} = require("./payments/paypal");
+const {
+  activateGiftCertificate,
+  insertGiftCertificate,
+  getCertificateBalance,
+  applyGiftCertificate,
+} = require("./giftcertificate/giftcertificatehelper");
 
 const PORT = process.env.PORT || 3001;
 
@@ -54,6 +71,11 @@ app.post("/api/pay", async (req, res) => {
   res.status(200).json(result);
 });
 
+app.post("/api/pay-for-gift-certificate", async (req, res) => {
+  const result = await createPaymentForGiftCertificate(req.body);
+  res.status(200).json(result);
+});
+
 app.post("/api/ticket", async (req, res) => {
   await markCouponAsUsed(req.body.coupon);
   const result = createTicket(req.body.submissionId);
@@ -71,12 +93,52 @@ app.post("/api/create-paypal-order", async (req, res) => {
   res.json(order);
 });
 
+app.post("/api/create-paypal-order-for-gift-certificate", async (req, res) => {
+  const order = await createOrderForGiftCertificate(req.body);
+  res.json(order);
+});
+
 // capture payment & store order information or fullfill order
 app.post("/api/capture-paypal-order", async (req, res) => {
   const { orderID } = req.body;
   const captureData = await capturePayment(orderID);
   // TODO: store payment information such as the transaction ID
   res.json(captureData);
+});
+
+app.post("/api/create-gift-certificate", async (req, res) => {
+  const cert = await insertGiftCertificate(
+    req.body.formData.email,
+    req.body.formData.amount,
+    req.body.formData.fullName
+  );
+  res.json(cert);
+});
+
+app.post("/api/activate-gift-certificate", async (req, res) => {
+  const cert = await activateGiftCertificate(
+    req.body.formData.email,
+    req.body.formData.amount,
+    req.body.formData.fullName
+  );
+  res.json(cert);
+});
+
+app.post("/api/apply-gift-certificate", async (req, res) => {
+  const { code, amount } = req.body;
+  const cert = await applyGiftCertificate(code, amount);
+  res.json(cert);
+});
+
+app.get("/api/get-certificate-balance", async (req, res) => {
+  const result = await getCertificateBalance(req.query.code);
+  res.send(result);
+});
+
+// called when a gift certificate form is updated
+app.post("/api/update-gift-certificate", async (req, res) => {
+  let resp = await updateGiftCertificate(req.body.certificate, req.body.id);
+  res.json({ message: resp });
 });
 
 app.get("*", (req, res) => {

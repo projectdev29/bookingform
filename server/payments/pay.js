@@ -84,4 +84,67 @@ const createPayment = async (body) => {
   }
 };
 
-module.exports = { createPayment };
+const createPaymentForGiftCertificate = async (body) => {
+  try {
+    const submission = await findById(body.submissionId, "GiftCertificates");
+    if (submission.notFound) {
+      console.log(
+        "This should not happen. Submission Id not found: " + body.submissionId
+      );
+      return submission.error;
+    }
+    if (!submission.amount || submission.amount < 0) {
+      return '{"errors": [{"category": "INTERNAL", "code": "INTERNAL", "detail": "Invalid gift certificate amount. Please contact support for assistance."}]}';
+    }
+    const customerResult = await customersApi.searchCustomers({
+      query: { filter: { emailAddress: { exact: body.customer.email } } },
+    });
+    let customer = null;
+    if (
+      customerResult.result &&
+      customerResult.result.customers &&
+      customerResult.result.customers.length > 0
+    ) {
+      customer = customerResult.result.customers[0];
+    }
+    if (customer === null) {
+      const response = await customersApi.createCustomer({
+        givenName: body.customer.firstName,
+        familyName: body.customer.lastName,
+        emailAddress: body.customer.email,
+        address: body.customer.address,
+      });
+
+      if (response.result.customer) {
+        customer = response.result.customer;
+      } else {
+        console.log(response.result.errors);
+        return response.result.errors;
+      }
+    }
+
+    const { result } = await paymentsApi.createPayment({
+      idempotencyKey: crypto.randomUUID(),
+      sourceId: body.sourceId,
+      amountMoney: {
+        currency: "USD",
+        amount: submission.amount * 100,
+      },
+      referenceId: body.submissionId,
+      buyerEmailAddress: body.customer.email,
+      billingAddress: body.customer.address,
+      customerId: customer.id,
+      note: "Gift Certificate - Booking For Visa",
+    });
+    return result;
+  } catch (error) {
+    let err = error;
+    if (error.body) {
+      err = error.body;
+    }
+    console.log(err);
+    return err;
+  }
+};
+
+module.exports = { createPayment, createPaymentForGiftCertificate };
