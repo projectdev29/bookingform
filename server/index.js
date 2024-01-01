@@ -116,11 +116,7 @@ app.post("/api/create-gift-certificate", async (req, res) => {
 });
 
 app.post("/api/activate-gift-certificate", async (req, res) => {
-  const cert = await activateGiftCertificate(
-    req.body.formData.email,
-    req.body.formData.amount,
-    req.body.formData.fullName
-  );
+  const cert = await activateGiftCertificate(req.body.submissionId);
   res.json(cert);
 });
 
