@@ -43,11 +43,11 @@ const getCertificateBalance = async (code) => {
 const activateGiftCertificate = async (submissionId) => {
   const certificate = await findById(submissionId, "GiftCertificates");
   const updatedCert = {
-    active: true,
     ...certificate,
+    active: true,
   };
 
-  const result = await updateGiftCertificate(updatedCert);
+  const result = await updateGiftCertificate(updatedCert, submissionId);
   if (result.succeeded) {
     return updatedCert;
   } else {
