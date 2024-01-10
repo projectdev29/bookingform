@@ -3,8 +3,11 @@ const {
   find,
   updateGiftCertificate,
   findById,
-  update,
 } = require("../database/mongodbhelper");
+const {
+  sendGiftCertificateEmailConfirmation,
+} = require("../email/emailhelper");
+const { generateGiftCertificateHtml } = require("../html/htmlhelper");
 
 // activate must be called to mark it active. it should be done after successful payment
 const insertGiftCertificate = async (email, amount, fullName) => {
@@ -39,7 +42,13 @@ const getCertificateBalance = async (code) => {
   }
   return certificate;
 };
-
+const updateGiftCertificateBeforeActivation = async (certificate, id) => {
+  const certToUpdate = {
+    remainingAmount: certificate.amount,
+    ...certificate,
+  };
+  return await updateGiftCertificate(certToUpdate, id);
+};
 const activateGiftCertificate = async (submissionId) => {
   const certificate = await findById(submissionId, "GiftCertificates");
   const updatedCert = {
@@ -49,6 +58,10 @@ const activateGiftCertificate = async (submissionId) => {
 
   const result = await updateGiftCertificate(updatedCert, submissionId);
   if (result.succeeded) {
+    // send email to customer
+    const html_body = generateGiftCertificateHtml(updatedCert);
+    sendGiftCertificateEmailConfirmation(updatedCert.email, html_body);
+
     return updatedCert;
   } else {
     return result;
@@ -73,16 +86,18 @@ const applyGiftCertificate = async (code, amount) => {
   if (amount <= certificate.remainingAmount) {
     appliedAmount = amount;
   } else {
-    return {
-      error: "Not enough balance.",
-    };
+    appliedAmount = certificate.remainingAmount;
   }
   const remainingAmount = certificate.remainingAmount - appliedAmount;
   const updatedCert = {
     ...certificate,
     remainingAmount: remainingAmount,
+    appliedAmount: appliedAmount,
   };
-  const result = await updateGiftCertificate(updatedCert);
+  const result = await updateGiftCertificate(
+    updatedCert,
+    certificate._id.toString()
+  );
   if (result.succeeded) {
     return updatedCert;
   } else {
@@ -108,4 +123,5 @@ module.exports = {
   insertGiftCertificate,
   applyGiftCertificate,
   getCertificateBalance,
+  updateGiftCertificateBeforeActivation,
 };

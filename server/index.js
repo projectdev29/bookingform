@@ -5,11 +5,7 @@ const express = require("express");
 const cors = require("cors");
 const bodyParser = require("body-parser");
 
-const {
-  insert,
-  update,
-  updateGiftCertificate,
-} = require("./database/mongodbhelper");
+const { insert, update } = require("./database/mongodbhelper");
 const { createTicket } = require("./zendesk/tickethelper");
 const { calculateTotal } = require("./pricing/pricinghelper");
 const {
@@ -27,6 +23,7 @@ const {
   insertGiftCertificate,
   getCertificateBalance,
   applyGiftCertificate,
+  updateGiftCertificateBeforeActivation,
 } = require("./giftcertificate/giftcertificatehelper");
 
 const PORT = process.env.PORT || 3001;
@@ -133,7 +130,10 @@ app.get("/api/get-certificate-balance", async (req, res) => {
 
 // called when a gift certificate form is updated
 app.post("/api/update-gift-certificate", async (req, res) => {
-  let resp = await updateGiftCertificate(req.body.certificate, req.body.id);
+  let resp = await updateGiftCertificateBeforeActivation(
+    req.body.certificate,
+    req.body.id
+  );
   res.json({ message: resp });
 });
 
