@@ -144,7 +144,7 @@ const generateGiftCertificateHtml = (giftCertificate) => {
     "</td></tr>";
 
   html_body +=
-    "<tr><td><b> Total Amount </b></td><td>" +
+    "<tr><td><b> Total Amount </b></td><td>$" +
     giftCertificate.amount +
     "</td></tr>";
 

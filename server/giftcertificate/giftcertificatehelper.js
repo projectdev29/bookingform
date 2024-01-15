@@ -68,13 +68,7 @@ const activateGiftCertificate = async (submissionId) => {
   }
 };
 
-// client-> apply cert
-// call to server getCertificateBalance
-// client applies order balance
-// if balance zero, client calls server to applyGiftCertificate. on success, order was successful
-// if amount remaining > 0, call credit card/paypal processor to process balance. on success call applyCertificate. on failure don't call applyCertificate and fail the payment
-// if gift certificate balance changes between payment and the time of application, notify that the balance has changed and recalculate the payment amount
-const applyGiftCertificate = async (code, amount) => {
+const validateGiftCertificate = async (code, amount) => {
   const filter = { code: code };
   const certificate = await find(filter, "GiftCertificates");
   if (!certificate || certificate == null || certificate.notFound) {
@@ -94,9 +88,34 @@ const applyGiftCertificate = async (code, amount) => {
     remainingAmount: remainingAmount,
     appliedAmount: appliedAmount,
   };
+  return updatedCert;
+};
+
+const deductAmountFromGiftCertificate = async (code, amount) => {
+  const filter = { code: code };
+  const certificate = await find(filter, "GiftCertificates");
+  if (!certificate || certificate == null || certificate.notFound) {
+    return {
+      error: "Invalid certificate code.",
+    };
+  }
+  let appliedAmount = 0;
+  if (amount <= certificate.remainingAmount) {
+    appliedAmount = amount;
+  } else {
+    return {
+      succeeded: false,
+      error: "Insufficient balance for the specified amount.",
+    };
+  }
+  const remainingAmount = certificate.remainingAmount - appliedAmount;
+  const updatedCert = {
+    ...certificate,
+    remainingAmount: remainingAmount,
+  };
   const result = await updateGiftCertificate(
     updatedCert,
-    certificate._id.toString()
+    updatedCert._id.toString()
   );
   if (result.succeeded) {
     return updatedCert;
@@ -121,7 +140,8 @@ const generateGiftCertificateCode = () => {
 module.exports = {
   activateGiftCertificate,
   insertGiftCertificate,
-  applyGiftCertificate,
+  validateGiftCertificate,
   getCertificateBalance,
   updateGiftCertificateBeforeActivation,
+  deductAmountFromGiftCertificate,
 };
