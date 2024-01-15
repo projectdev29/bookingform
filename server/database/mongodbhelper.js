@@ -80,14 +80,9 @@ const updateGiftCertificate = async (certificate, id) => {
   const dbo = client.db(process.env.DB_NAME);
   try {
     const filter = { _id: new ObjectId(id) };
-    const certToUpdate = {
-      remainingAmount: certificate.amount,
-      ...certificate,
-    };
-
     const upsertResult = await dbo
       .collection("GiftCertificates")
-      .updateOne(filter, { $set: certToUpdate });
+      .updateOne(filter, { $set: certificate });
     result = {
       succeeded: upsertResult.acknowledged,
     };

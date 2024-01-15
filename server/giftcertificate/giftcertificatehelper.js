@@ -3,8 +3,11 @@ const {
   find,
   updateGiftCertificate,
   findById,
-  update,
 } = require("../database/mongodbhelper");
+const {
+  sendGiftCertificateEmailConfirmation,
+} = require("../email/emailhelper");
+const { generateGiftCertificateHtml } = require("../html/htmlhelper");
 
 // activate must be called to mark it active. it should be done after successful payment
 const insertGiftCertificate = async (email, amount, fullName) => {
@@ -39,7 +42,13 @@ const getCertificateBalance = async (code) => {
   }
   return certificate;
 };
-
+const updateGiftCertificateBeforeActivation = async (certificate, id) => {
+  const certToUpdate = {
+    remainingAmount: certificate.amount,
+    ...certificate,
+  };
+  return await updateGiftCertificate(certToUpdate, id);
+};
 const activateGiftCertificate = async (submissionId) => {
   const certificate = await findById(submissionId, "GiftCertificates");
   const updatedCert = {
@@ -49,19 +58,40 @@ const activateGiftCertificate = async (submissionId) => {
 
   const result = await updateGiftCertificate(updatedCert, submissionId);
   if (result.succeeded) {
+    // send email to customer
+    const html_body = generateGiftCertificateHtml(updatedCert);
+    sendGiftCertificateEmailConfirmation(updatedCert.email, html_body);
+
     return updatedCert;
   } else {
     return result;
   }
 };
 
-// client-> apply cert
-// call to server getCertificateBalance
-// client applies order balance
-// if balance zero, client calls server to applyGiftCertificate. on success, order was successful
-// if amount remaining > 0, call credit card/paypal processor to process balance. on success call applyCertificate. on failure don't call applyCertificate and fail the payment
-// if gift certificate balance changes between payment and the time of application, notify that the balance has changed and recalculate the payment amount
-const applyGiftCertificate = async (code, amount) => {
+const validateGiftCertificate = async (code, amount) => {
+  const filter = { code: code };
+  const certificate = await find(filter, "GiftCertificates");
+  if (!certificate || certificate == null || certificate.notFound) {
+    return {
+      error: "Invalid certificate code.",
+    };
+  }
+  let appliedAmount = 0;
+  if (amount <= certificate.remainingAmount) {
+    appliedAmount = amount;
+  } else {
+    appliedAmount = certificate.remainingAmount;
+  }
+  const remainingAmount = certificate.remainingAmount - appliedAmount;
+  const updatedCert = {
+    ...certificate,
+    remainingAmount: remainingAmount,
+    appliedAmount: appliedAmount,
+  };
+  return updatedCert;
+};
+
+const deductAmountFromGiftCertificate = async (code, amount) => {
   const filter = { code: code };
   const certificate = await find(filter, "GiftCertificates");
   if (!certificate || certificate == null || certificate.notFound) {
@@ -74,7 +104,8 @@ const applyGiftCertificate = async (code, amount) => {
     appliedAmount = amount;
   } else {
     return {
-      error: "Not enough balance.",
+      succeeded: false,
+      error: "Insufficient balance for the specified amount.",
     };
   }
   const remainingAmount = certificate.remainingAmount - appliedAmount;
@@ -82,7 +113,10 @@ const applyGiftCertificate = async (code, amount) => {
     ...certificate,
     remainingAmount: remainingAmount,
   };
-  const result = await updateGiftCertificate(updatedCert);
+  const result = await updateGiftCertificate(
+    updatedCert,
+    updatedCert._id.toString()
+  );
   if (result.succeeded) {
     return updatedCert;
   } else {
@@ -106,6 +140,8 @@ const generateGiftCertificateCode = () => {
 module.exports = {
   activateGiftCertificate,
   insertGiftCertificate,
-  applyGiftCertificate,
+  validateGiftCertificate,
   getCertificateBalance,
+  updateGiftCertificateBeforeActivation,
+  deductAmountFromGiftCertificate,
 };

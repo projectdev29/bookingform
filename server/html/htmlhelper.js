@@ -135,4 +135,24 @@ const generateHtml = (formSubmission) => {
   return juice(html_body);
 };
 
-module.exports = { generateHtml };
+const generateGiftCertificateHtml = (giftCertificate) => {
+  let html_body =
+    "<style>tr:nth-child(odd) {background-color: #f2f2f2;} td:first-child {width: 20%;} td:last-child {width: 80%;}</style><table><tbody><tr><td><b> Email </b></td><td>" +
+    giftCertificate.email +
+    "</td></tr><tr><td><b> Customer Name </b></td><td>" +
+    giftCertificate.fullName +
+    "</td></tr>";
+
+  html_body +=
+    "<tr><td><b> Total Amount </b></td><td>$" +
+    giftCertificate.amount +
+    "</td></tr>";
+
+  html_body +=
+    "<tr><td><b> Code </b></td><td>" + giftCertificate.code + "</td></tr>";
+
+  html_body += "</tbody></table>";
+  return juice(html_body);
+};
+
+module.exports = { generateHtml, generateGiftCertificateHtml };
