@@ -108,6 +108,7 @@ app.post("/api/create-gift-certificate", async (req, res) => {
   const cert = await insertGiftCertificate(
     req.body.formData.email,
     req.body.formData.amount,
+    req.body.formData.discount,
     req.body.formData.fullName
   );
   res.json(cert);

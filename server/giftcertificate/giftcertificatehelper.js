@@ -10,13 +10,14 @@ const {
 const { generateGiftCertificateHtml } = require("../html/htmlhelper");
 
 // activate must be called to mark it active. it should be done after successful payment
-const insertGiftCertificate = async (email, amount, fullName) => {
+const insertGiftCertificate = async (email, amount, discount, fullName) => {
   const giftCertificateCode = generateGiftCertificateCode();
   const certificate = {
     active: false,
     code: giftCertificateCode,
     email: email,
     amount: amount,
+    discount: discount,
     remainingAmount: amount,
     fullName: fullName,
   };
