@@ -96,6 +96,8 @@ const createPaymentForGiftCertificate = async (body) => {
     if (!submission.amount || submission.amount < 0) {
       return '{"errors": [{"category": "INTERNAL", "code": "INTERNAL", "detail": "Invalid gift certificate amount. Please contact support for assistance."}]}';
     }
+    const netAmount = parseInt(submission.amount) - submission.discount;
+
     const customerResult = await customersApi.searchCustomers({
       query: { filter: { emailAddress: { exact: body.customer.email } } },
     });
@@ -128,7 +130,7 @@ const createPaymentForGiftCertificate = async (body) => {
       sourceId: body.sourceId,
       amountMoney: {
         currency: "USD",
-        amount: submission.amount * 100,
+        amount: netAmount * 100,
       },
       referenceId: body.submissionId,
       buyerEmailAddress: body.customer.email,

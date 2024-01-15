@@ -90,6 +90,7 @@ async function createOrderForGiftCertificate(body) {
     if (!submission.amount || submission.amount < 0) {
       return '{"errors": [{"category": "INTERNAL", "code": "INTERNAL", "detail": "Invalid gift certificate amount. Please contact support for assistance."}]}';
     }
+    const netAmount = parseInt(submission.amount) - submission.discount;
 
     const accessToken = await generateAccessToken();
     const url = `${baseURL.production}/v2/checkout/orders`;
@@ -103,11 +104,11 @@ async function createOrderForGiftCertificate(body) {
             description: "Gift Certificate - Booking For Visa",
             amount: {
               currency_code: "USD",
-              value: submission.amount.toString(),
+              value: netAmount.toString(),
               breakdown: {
                 item_total: {
                   currency_code: "USD",
-                  value: submission.amount.toString(),
+                  value: netAmount.toString(),
                 },
               },
             },
@@ -117,7 +118,7 @@ async function createOrderForGiftCertificate(body) {
                 quantity: "1",
                 unit_amount: {
                   currency_code: "USD",
-                  value: submission.amount.toString(),
+                  value: netAmount.toString(),
                 },
               },
             ],
