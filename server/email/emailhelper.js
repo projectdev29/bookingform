@@ -42,10 +42,23 @@ const sendGiftCertificateEmailConfirmation = (customerEmail, html_body) => {
     var mailOptions = {
       from: "Booking For Visa <" + process.env.EMAIL + ">",
       to: customerEmail,
-      subject: "Thank you for your purchase.",
+      subject: "Here's your voucher code",
+      html: html_body,
+    };
+    var selfMailOptions = {
+      from: "Booking For Visa <" + process.env.EMAIL + ">",
+      to: process.env.EMAIL,
+      subject: "BFV Voucher Purchase!",
       html: html_body,
     };
 
+    transporter.sendMail(selfMailOptions, function (error, info) {
+      if (error) {
+        console.log(error);
+      } else {
+        console.log("Email to self sent: " + info.response);
+      }
+    });
     transporter.sendMail(mailOptions, function (error, info) {
       if (error) {
         console.log(error);

@@ -7,7 +7,7 @@ const {
 const {
   sendGiftCertificateEmailConfirmation,
 } = require("../email/emailhelper");
-const { generateGiftCertificateHtml } = require("../html/htmlhelper");
+const { generateGiftCertificateFormattedHtml } = require("../html/htmlhelper");
 
 // activate must be called to mark it active. it should be done after successful payment
 const insertGiftCertificate = async (email, amount, discount, fullName) => {
@@ -52,6 +52,13 @@ const updateGiftCertificateBeforeActivation = async (certificate, id) => {
 };
 const activateGiftCertificate = async (submissionId) => {
   const certificate = await findById(submissionId, "GiftCertificates");
+  if (certificate.notFound) {
+    console.log(
+      "Certificate not found. This should never happen. SubmissionId: " +
+        submissionId
+    );
+    return {};
+  }
   const updatedCert = {
     ...certificate,
     active: true,
@@ -60,7 +67,7 @@ const activateGiftCertificate = async (submissionId) => {
   const result = await updateGiftCertificate(updatedCert, submissionId);
   if (result.succeeded) {
     // send email to customer
-    const html_body = generateGiftCertificateHtml(updatedCert);
+    const html_body = await generateGiftCertificateFormattedHtml(updatedCert);
     sendGiftCertificateEmailConfirmation(updatedCert.email, html_body);
 
     return updatedCert;
