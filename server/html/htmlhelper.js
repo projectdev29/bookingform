@@ -3,7 +3,6 @@ const path = require("path");
 const dayjs = require("dayjs");
 const juice = require("juice");
 const generateHtml = (formSubmission) => {
-  //
   let html_body =
     "<style>tr:nth-child(odd) {background-color: #f2f2f2;} td:first-child {width: 20%;} td:last-child {width: 80%;}</style><table><tbody>" +
     "<tr><td><b> Email </b></td><td>" +
