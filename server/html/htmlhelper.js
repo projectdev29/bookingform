@@ -1,3 +1,5 @@
+const fs = require("fs").promises;
+const path = require("path");
 const dayjs = require("dayjs");
 const juice = require("juice");
 const generateHtml = (formSubmission) => {
@@ -155,4 +157,23 @@ const generateGiftCertificateHtml = (giftCertificate) => {
   return juice(html_body);
 };
 
-module.exports = { generateHtml, generateGiftCertificateHtml };
+const generateGiftCertificateFormattedHtml = async (giftCertificate) => {
+  const filePath = path.join(__dirname, "giftcertificateemailtemplate.html");
+  let html_content = await fs.readFile(filePath, "utf8");
+  // before updating the template make sure these 4 keywords
+  // are not used anywhere else in the template otherwise it will replace those values as well
+  html_content = html_content.replace("ddd", giftCertificate.code);
+  html_content = html_content.replace("aaa", giftCertificate.amount);
+  html_content = html_content.replace("ccc", giftCertificate.discount);
+  html_content = html_content.replace(
+    "bbb",
+    giftCertificate.amount - giftCertificate.discount
+  );
+  return juice(html_content);
+};
+
+module.exports = {
+  generateHtml,
+  generateGiftCertificateHtml,
+  generateGiftCertificateFormattedHtml,
+};
