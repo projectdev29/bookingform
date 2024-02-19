@@ -3,6 +3,7 @@ const {
   find,
   updateGiftCertificate,
   findById,
+  update,
 } = require("../database/mongodbhelper");
 const {
   sendGiftCertificateEmailConfirmation,
@@ -76,7 +77,25 @@ const activateGiftCertificate = async (submissionId) => {
   }
 };
 
-const validateGiftCertificate = async (code, amount) => {
+const validateGiftCertificate = async (code, submissionId) => {
+  const submission = await findById(submissionId, "FormSubmissions");
+  if (submission.notFound) {
+    console.log(
+      "This should not happen. Submission Id not found: " + submissionId
+    );
+    return submission.error;
+  }
+  if (
+    !submission.formData ||
+    !submission.formData.price ||
+    !submission.formData.price.totalCost ||
+    submission.formData.price.totalCost < 0
+  ) {
+    return {
+      error: "Invalid form submission id.",
+    };
+  }
+
   const filter = { code: code };
   const certificate = await find(filter, "GiftCertificates");
   if (!certificate || certificate == null || certificate.notFound) {
@@ -84,17 +103,37 @@ const validateGiftCertificate = async (code, amount) => {
       error: "Invalid certificate code.",
     };
   }
+  const price = submission.formData.price;
+  const applicableAmount =
+    price.passengerCost +
+    (price.additionalFlightCost ? price.additionalFlightCost : 0) +
+    (price.hotelCost ? price.hotelCost : 0) -
+    (price.discount ? price.discount : 0);
+
   let appliedAmount = 0;
-  if (amount <= certificate.remainingAmount) {
-    appliedAmount = amount;
+  if (applicableAmount <= certificate.remainingAmount) {
+    appliedAmount = applicableAmount;
   } else {
     appliedAmount = certificate.remainingAmount;
   }
   const remainingAmount = certificate.remainingAmount - appliedAmount;
+
+  let updatedFormData = {
+    ...submission.formData,
+    price: {
+      ...price,
+      totalCost: applicableAmount - appliedAmount,
+      giftCertificateAppliedAmount: appliedAmount,
+      giftCertificateRemainingBalance: remainingAmount,
+    },
+  };
+  await update(updatedFormData, submissionId, "FormSubmissions");
+
   const updatedCert = {
     ...certificate,
     remainingAmount: remainingAmount,
     appliedAmount: appliedAmount,
+    totalCost: applicableAmount - appliedAmount,
   };
   return updatedCert;
 };

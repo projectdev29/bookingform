@@ -120,10 +120,9 @@ app.post("/api/activate-gift-certificate", async (req, res) => {
 });
 
 app.get("/api/validate-gift-certificate", async (req, res) => {
-  const email = req.query.email;
   const code = req.query.code;
-  const amount = req.query.amount;
-  const cert = await validateGiftCertificate(code, amount);
+  const submissionId = req.query.submissionId;
+  const cert = await validateGiftCertificate(code, submissionId);
   res.json(cert);
 });
 
