@@ -26,6 +26,7 @@ const {
   updateGiftCertificateBeforeActivation,
   deductAmountFromGiftCertificate,
 } = require("./giftcertificate/giftcertificatehelper");
+const { submitVisaScore } = require("./visa-score/visaScoreHelper");
 
 const PORT = process.env.PORT || 3001;
 
@@ -146,6 +147,18 @@ app.post("/api/update-gift-certificate", async (req, res) => {
     req.body.id
   );
   res.json({ message: resp });
+});
+
+// Submit visa score endpoint
+app.post("/api/submit-visa-score", async (req, res) => {
+  const result = await submitVisaScore(req.body);
+  if (result.success) {
+    res.status(200).json({
+      visaScore: result.visaScore
+    });
+  } else {
+    res.status(400).json({ error: result.error });
+  }
 });
 
 app.get("*", (req, res) => {
