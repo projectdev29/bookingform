@@ -1,4 +1,4 @@
-const { calculateVisaScore } = require('./visaScoreHelper');
+const { calculateVisaScore, submitVisaScore } = require('./visaScoreHelper');
 
 describe('Visa Score Calculator Tests', () => {
   // Test Case 1: Strong Professional from Tier 1 Country

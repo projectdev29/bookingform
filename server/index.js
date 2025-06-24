@@ -149,7 +149,7 @@ app.post("/api/update-gift-certificate", async (req, res) => {
   res.json({ message: resp });
 });
 
-// Submit visa score endpoint
+// Submit visa score endpoint (freemium - returns partial score)
 app.post("/api/submit-visa-score", async (req, res) => {
   const result = await submitVisaScore(req.body);
   if (result.success) {
@@ -160,6 +160,7 @@ app.post("/api/submit-visa-score", async (req, res) => {
     res.status(400).json({ error: result.error });
   }
 });
+
 
 app.get("*", (req, res) => {
   res.sendFile(path.resolve(__dirname, "../client/build", "index.html"));

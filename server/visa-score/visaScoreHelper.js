@@ -1,13 +1,25 @@
-const { insert } = require("../database/mongodbhelper");
+const { insert, findById } = require("../database/mongodbhelper");
 
 const submitVisaScore = async (scoreData) => {
   try {
     // Calculate visa score first
     const visaScoreResult = calculateVisaScore(scoreData);
     
+    // Create freemium response with only nationality and travel scores
+    const freemiumResponse = {
+      total: visaScoreResult.total,
+      breakdown: {
+        nationality: visaScoreResult.breakdown.nationality,
+        travel: visaScoreResult.breakdown.travel
+      },
+      isFreemium: true,
+      message: "Complete your payment to see detailed breakdown and personalized recommendations"
+    };
+    
     const submission = {
       ...scoreData,
-      visaScore: visaScoreResult,
+      visaScore: visaScoreResult, // Store full score internally
+      freemiumScore: freemiumResponse, // Store freemium version
       createdAt: new Date(),
       type: 'visaScore'
     };
@@ -16,7 +28,7 @@ const submitVisaScore = async (scoreData) => {
     return {
       success: true,
       data: result,
-      visaScore: visaScoreResult
+      visaScore: freemiumResponse // Return freemium version to user
     };
   } catch (error) {
     return {
@@ -162,16 +174,65 @@ const countryTiers = {
         }
       }
       else if (data.visitPurpose === 'study') {
-        // Tuition and Living Covered (10 points)
-        if (data.hasTuitionCovered === 'yes') score += 10;
-        // Sponsor/Guardian Income (7 points)
-        if (data.hasSponsorIncome === 'yes') score += 7;
-        // Savings or Education Loan (4 points)
-        if (data.hasEducationFunds === 'yes') score += 4;
-        // Family Assets (2 points)
-        if (data.hasFamilyAssets === 'yes') score += 2;
-        // Scholarship/Grant (2 points)
-        if (data.hasScholarship === 'yes') score += 2;
+        // Tuition Coverage (8 points)
+        if (data.hasTuitionCovered === 'yes') {
+          score += 8; // Full tuition paid
+        } else if (data.hasTuitionCovered === 'partial') {
+          score += 4; // Partial scholarship
+        } else if (data.hasTuitionCovered === 'no') {
+          score += 0; // No tuition coverage
+        }
+
+        // Source of Funding for Living Expenses (6 points)
+        switch (data.hasSponsorIncome) {
+          case 'self':
+            score += 6; // Self-funded shows strong financial capability
+            break;
+          case 'family':
+            score += 4; // Family support is good
+            break;
+          case 'scholarship':
+            score += 5; // Scholarship is excellent
+            break;
+          case 'loan':
+            score += 3; // Education loan is acceptable
+            break;
+        }
+
+        // Available Funds (5 points)
+        switch (data.hasEducationFunds) {
+          case 'high':
+            score += 5; // More than required amount
+            break;
+          case 'sufficient':
+            score += 4; // Sufficient amount
+            break;
+          case 'minimum':
+            score += 2; // Minimum required amount
+            break;
+          case 'low':
+            score += 0; // Less than required amount
+            break;
+        }
+
+        // Bank Statement (4 points)
+        if (data.hasFamilyAssets === 'yes') {
+          score += 4; // Shows proof of funds
+        }
+
+        // Additional Financial Support (4 points)
+        const additionalSupport = data.hasScholarship || [];
+        if (additionalSupport.includes('property')) score += 2;
+        if (additionalSupport.includes('investments')) score += 1;
+        if (additionalSupport.includes('sponsor')) score += 1;
+
+        // Bonus points for strong overall financial profile (3 points)
+        if (data.hasTuitionCovered === 'yes' && 
+            (data.hasSponsorIncome === 'self' || data.hasSponsorIncome === 'scholarship') && 
+            data.hasEducationFunds === 'high' && 
+            data.hasFamilyAssets === 'yes') {
+          score += 3; // Bonus for complete financial documentation
+        }
       }
       else if (data.visitPurpose === 'business') {
         // Business Ownership/Income (8 points)
@@ -381,7 +442,7 @@ const countryTiers = {
     totalScore += visitingCountryScore;
     
     // Ensure total score doesn't go below 0
-    totalScore = Math.max(totalScore, 0);
+    totalScore = Math.min(Math.max(totalScore, 0), 100);
   
     return {
       total: totalScore,
@@ -397,7 +458,111 @@ const countryTiers = {
     };
   };
 
+const generateReport = (scoreData, formData = {}) => {
+  const { breakdown } = scoreData;
+  const suggestions = [];
+
+  // Travel History (Max 20)
+  if (breakdown.travel < 10) {
+      suggestions.push({
+          title: "Improve Your Travel History",
+          text: "Your travel history score is low. Visiting more countries, especially well-regarded ones (like in Europe, North America, or Australia), can significantly strengthen your profile. Even trips to nearby countries can help."
+      });
+  }
+
+  // Financial Strength (Max 25)
+  if (breakdown.financial < 15) {
+      let text = "Your financial score could be improved. Ensure you provide clear evidence of sufficient funds for your trip. Based on your purpose of travel, consider the following: <ul>";
+      if (scoreData.visitPurpose === 'tourism') {
+          text += "<li>Provide bank statements for the last 6 months showing a healthy and stable balance.</li>";
+          if (!scoreData.hasStableEmployment || scoreData.hasStableEmployment === 'no') text += "<li>If employed, a letter from your employer confirming your position and salary.</li>";
+          if (!scoreData.hasAssets || scoreData.hasAssets === 'no') text += "<li>Documents showing ownership of assets (property, car, investments).</li>";
+          if (!scoreData.hasSponsorLetter || scoreData.hasSponsorLetter === 'no') text += "<li>If sponsored, a formal sponsor letter and the sponsor's financial documents.</li>";
+      } else if (scoreData.visitPurpose === 'study') {
+          text += "<li>Proof that tuition fees are fully paid is a significant plus.</li>";
+          if (scoreData.hasTuitionCovered !== 'yes') text += "<li>If you have a partial scholarship, provide the award letter.</li>";
+          text += "<li>Your sponsor's financial documents must be strong and clearly show their ability to support you.</li>";
+          text += "<li>Show evidence of sufficient funds for your entire planned stay.</li>";
+      } else if (scoreData.visitPurpose === 'business') {
+          text += "<li>Provide strong company financial statements and tax returns for the last 1-2 years.</li>";
+          if (!scoreData.hasBusinessInvitation || scoreData.hasBusinessInvitation === 'no') text += "<li>A formal invitation letter from the business partner in the destination country is crucial.</li>";
+          text += "<li>Show proof of personal savings and assets as a backup.</li>";
+      } else if (scoreData.visitPurpose === 'work') {
+          if (!scoreData.hasJobOffer || scoreData.hasJobOffer === 'no') text += "<li>A valid job offer from a reputable company is the most important document.</li>";
+          text += "<li>Provide evidence of sufficient funds to cover relocation and initial living costs until you receive your first salary.</li>";
+          text += "<li>Show proof of personal assets or financial backup from family.</li>";
+      } else {
+           text += "<li>Provide bank statements showing a stable and sufficient balance.</li>";
+           text += "<li>Show proof of a stable income or source of funds.</li>";
+      }
+      text += "</ul>";
+      suggestions.push({
+          title: "Strengthen Your Financial Profile",
+          text: text
+      });
+  }
+
+  // Ties to Home Country (Max 15)
+  if (breakdown.ties < 10) {
+      suggestions.push({
+          title: "Demonstrate Stronger Ties to Your Home Country",
+          text: "It's critical to convince the visa officer that you will return home after your visit. Strengthen this area by providing: <ul><li>Evidence of immediate family (spouse, children) residing in your home country (e.g., birth/marriage certificates).</li><li>A letter from your employer stating you have a job to return to.</li><li>Proof of property ownership or significant long-term investments at home.</li></ul>"
+      });
+  }
+
+  // Documents Preparedness (Max 15)
+  if (breakdown.documents < 10) {
+      suggestions.push({
+          title: "Improve Your Document Preparedness",
+          text: "A complete and well-organized application makes a strong impression. Make sure you include: <ul><li>A detailed, well-written cover letter explaining your purpose of travel and itinerary.</li><li>Bank statements for the last 3-6 months.</li><li>Flight and hotel reservations (you can get these without payment).</li></ul>"
+      });
+  }
+
+  // Risk Factors (Max 10)
+  if (breakdown.risk < 7) {
+      suggestions.push({
+          title: "Address Potential Risk Factors",
+          text: "Your profile may have elements that visa officers perceive as high-risk (this can be related to age, marital status, or previous visa denials). To mitigate this, it's essential to make other parts of your application exceptionally strong, especially your financial standing and ties to your home country."
+      });
+  }
+  
+  // Visiting Country Difficulty
+  if (breakdown.visitingCountry < -6) { // e.g. -10 for US
+       suggestions.push({
+          title: "Acknowledge the High Visa Difficulty",
+          text: `The country you are visiting has very strict visa policies, which has deducted ${Math.abs(breakdown.visitingCountry)} points from your score. This means your application must be impeccable. Double-check every single requirement and provide as much supporting evidence as you can for all your claims.`
+      });
+  }
+
+  if (suggestions.length === 0) {
+      return `
+          <div class="improvements">
+              <h3>Congratulations on a Strong Profile!</h3>
+              <p>Your visa profile appears to be very strong. Based on our assessment, you have a high chance of success. Ensure all your documents are genuine, well-organized, and you present your case clearly and confidently to the visa officer. Good luck!</p>
+          </div>
+      `;
+  }
+
+  let html = `
+      <div class="improvements">
+        <h2>How to Improve Your Score</h2>
+        <p>Based on your profile, here are some suggestions to strengthen your visa application:</p>
+  `;
+  suggestions.forEach(suggestion => {
+      html += `
+          <div class="suggestion-item">
+              <h3>${suggestion.title}</h3>
+              <div>${suggestion.text}</div>
+          </div>
+      `;
+  });
+  html += '</div>';
+
+  return html;
+};
+
 module.exports = {
   calculateVisaScore,
-  submitVisaScore
+  submitVisaScore,
+  generateReport
 }; 
