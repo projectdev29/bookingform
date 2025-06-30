@@ -50,6 +50,30 @@ const update = async (data, id, collectionName) => {
   return result;
 };
 
+const updatePaymentStatus = async (id, isPaid, collectionName) => {
+  let client = await MongoClient.connect(url);
+  const dbo = client.db(process.env.DB_NAME);
+  let result = {};
+  try {
+    const filter = { _id: new ObjectId(id) };
+    const updateDoc = {
+      $set: { isPaid: isPaid },
+    };
+    const updateResult = await dbo.collection(collectionName).updateOne(filter, updateDoc);
+    result = {
+      succeeded: updateResult.acknowledged,
+    };
+  } catch (err) {
+    result = {
+      error: err,
+    };
+  }
+  setTimeout(() => {
+    client.close();
+  }, 1000);
+  return result;
+};
+
 const updateCoupon = async (data, id, collectionName) => {
   let client = await MongoClient.connect(url);
   const dbo = client.db(process.env.DB_NAME);
@@ -150,6 +174,7 @@ const find = async (filter, collectionName) => {
 module.exports = {
   insert,
   update,
+  updatePaymentStatus,
   updateCoupon,
   find,
   findById,

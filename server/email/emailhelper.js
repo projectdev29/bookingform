@@ -73,7 +73,7 @@ const sendGiftCertificateEmailConfirmation = (customerEmail, html_body) => {
 };
 
 const createVisaScoreEmailContent = (customerEmail, customerName, scoreData) => {
-  const { total, breakdown } = scoreData;
+  const { total, breakdown } = scoreData.visaScore;
   const improvementsHtml = generateReport(scoreData);
   
   const html_body = `
@@ -81,114 +81,134 @@ const createVisaScoreEmailContent = (customerEmail, customerName, scoreData) => 
     <html>
     <head>
       <style>
-        body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
-        .container { max-width: 600px; margin: 0 auto; padding: 20px; }
-        .header { text-align: center; padding: 20px 0; background-color: #1a237e; color: white; }
-        .logo { max-width: 200px; margin-bottom: 10px; }
-        .content { padding: 20px; background-color: #f9f9f9; }
-        .score-box { 
-          text-align: center; 
-          padding: 20px; 
-          margin: 20px 0; 
-          background-color: #e8eaf6; 
-          border-radius: 8px;
-        }
-        .total-score {
-          font-size: 48px;
-          font-weight: bold;
-          color: #1a237e;
-        }
-        .breakdown {
-          margin: 20px 0;
-        }
-        .breakdown-item {
-          display: flex;
-          justify-content: space-between;
-          padding: 10px;
-          border-bottom: 1px solid #ddd;
-        }
-        .footer {
-          text-align: center;
-          padding: 20px;
-          font-size: 12px;
-          color: #666;
-        }
-        .improvements {
-          margin-top: 30px;
-          padding: 20px;
-          background-color: #f0f4c3;
-          border: 1px solid #dce775;
-          border-radius: 8px;
-        }
-        .suggestion-item {
-          margin-bottom: 15px;
-        }
-        .suggestion-item h3 {
-          color: #33691e;
-          margin-bottom: 5px;
-        }
-        .suggestion-item div ul {
-          padding-left: 20px;
-          margin-top: 5px;
-        }
-      </style>
+  body {
+    font-family: 'Segoe UI', Roboto, sans-serif;
+    background-color: #f4f6f8;
+    color: #333;
+    line-height: 1.6;
+  }
+
+  .container {
+    max-width: 700px;
+    margin: 0 auto;
+    background: #ffffff;
+    padding: 24px;
+    border-radius: 10px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+  }
+
+  .header {
+    text-align: center;
+    background-color: #1a237e;
+    color: white;
+    padding: 30px 20px;
+    border-radius: 10px 10px 0 0;
+  }
+
+  .content {
+    padding: 24px;
+  }
+
+  .score-box {
+    background-color: #e3f2fd;
+    padding: 24px;
+    text-align: center;
+    border-radius: 10px;
+    margin: 20px 0;
+  }
+
+  .total-score {
+    font-size: 48px;
+    font-weight: bold;
+    color: #0d47a1;
+  }
+
+  .breakdown h3 {
+    margin-top: 20px;
+    margin-bottom: 10px;
+    font-size: 1.2rem;
+  }
+
+  .breakdown-item {
+    display: flex;
+    justify-content: space-between;
+    padding: 12px 0;
+    border-bottom: 1px solid #eee;
+  }
+
+  .improvements {
+  margin-top: 30px;
+  padding: 24px;
+  background-color: #f9f9f9;
+  border: 1px solid #e0e0e0;
+  border-radius: 10px;
+}
+
+.improvements h2 {
+  font-size: 1.5rem;
+  color: #1a237e;
+  margin-bottom: 16px;
+  border-bottom: 2px solid #cfd8dc;
+  padding-bottom: 6px;
+}
+
+.suggestion-item {
+  margin-bottom: 24px;
+  padding: 16px;
+  background-color: #ffffff;
+  border: 1px solid #e0e0e0;
+  border-radius: 8px;
+}
+
+.suggestion-item h3 {
+  color: #1a237e;
+  font-size: 1.15rem;
+  margin-bottom: 10px;
+}
+
+.suggestion-item div {
+  font-size: 0.95rem;
+  color: #333;
+}
+
+.suggestion-item ul {
+  margin-top: 8px;
+  padding-left: 20px;
+  color: #444;
+}
+
+
+  .footer {
+    text-align: center;
+    font-size: 12px;
+    color: #999;
+    padding-top: 30px;
+  }
+</style>
+
     </head>
     <body>
       <div class="container">
-        <div class="header">
-          <h1>Visa Score Report</h1>
-          <p style="margin: 0; font-size: 16px; opacity: 0.9;">Powered by Booking For Visa</p>
-        </div>
+        
         <div class="content">
           <p>Dear ${customerName},</p>
           <p>Thank you for using Booking For Visa's visa score assessment tool. Below is your detailed visa score report:</p>
           
           <div class="score-box">
-            <div class="total-score">${total}</div>
             <p>Total Visa Score</p>
+            <div class="total-score">${total}</div>
+            
           </div>
 
-          <div class="breakdown">
-            <h3>Score Breakdown:</h3>
-            <div class="breakdown-item">
-              <span>Nationality Score:</span>
-              <span>${breakdown.nationality} points</span>
-            </div>
-            <div class="breakdown-item">
-              <span>Travel History:</span>
-              <span>${breakdown.travel} points</span>
-            </div>
-            <div class="breakdown-item">
-              <span>Financial Strength:</span>
-              <span>${breakdown.financial} points</span>
-            </div>
-            <div class="breakdown-item">
-              <span>Ties to Home Country:</span>
-              <span>${breakdown.ties} points</span>
-            </div>
-            <div class="breakdown-item">
-              <span>Documentation:</span>
-              <span>${breakdown.documents} points</span>
-            </div>
-            <div class="breakdown-item">
-              <span>Risk Assessment:</span>
-              <span>${breakdown.risk} points</span>
-            </div>
-            <div class="breakdown-item">
-              <span>Country Difficulty Adjustment:</span>
-              <span>${breakdown.visitingCountry} points</span>
-            </div>
-          </div>
-
-          <p>This score is based on various factors including your nationality, travel history, financial situation, and documentation. A higher score indicates a stronger visa application profile.</p>
+          <p>The score is based on various factors including your nationality, travel history, financial situation, and documentation. A higher score indicates a stronger visa application profile.</p>
           
           ${improvementsHtml}
 
-          <p>For personalized assistance with your visa application, please contact our visa experts at support@bookingforvisa.com.</p>
+    
         </div>
         <div class="footer">
           <p>© ${new Date().getFullYear()} Booking For Visa. All rights reserved.</p>
-          <p>This is an automated message, please do not reply directly to this email.</p>
+          
         </div>
       </div>
     </body>

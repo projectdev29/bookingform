@@ -9,10 +9,23 @@ BigInt.prototype.toJSON = function () {
   return this.toString();
 };
 
-const { paymentsApi, customersApi } = new Client({
+// Production client
+const productionClient = new Client({
   accessToken: process.env.SQUARE_ACCESS_TOKEN,
   environment: "production",
 });
+
+// Sandbox client
+const sandboxClient = new Client({
+  accessToken: process.env.SQUARE_SANDBOX_ACCESS_TOKEN,
+  environment: "sandbox",
+});
+
+// Production APIs
+const { paymentsApi: productionPaymentsApi, customersApi: productionCustomersApi } = productionClient;
+
+// Sandbox APIs
+const { paymentsApi: sandboxPaymentsApi, customersApi: sandboxCustomersApi } = sandboxClient;
 
 const createPayment = async (body) => {
   try {
@@ -31,7 +44,7 @@ const createPayment = async (body) => {
     ) {
       return '{"errors": [{"category": "INTERNAL", "code": "INTERNAL", "detail": "Invalid price for the order. Please contact support for assistance."}]}';
     }
-    const customerResult = await customersApi.searchCustomers({
+    const customerResult = await productionCustomersApi.searchCustomers({
       query: { filter: { emailAddress: { exact: body.customer.email } } },
     });
     let customer = null;
@@ -43,7 +56,7 @@ const createPayment = async (body) => {
       customer = customerResult.result.customers[0];
     }
     if (customer === null) {
-      const response = await customersApi.createCustomer({
+      const response = await productionCustomersApi.createCustomer({
         givenName: body.customer.firstName,
         familyName: body.customer.lastName,
         emailAddress: body.customer.email,
@@ -58,7 +71,7 @@ const createPayment = async (body) => {
       }
     }
 
-    const { result } = await paymentsApi.createPayment({
+    const { result } = await productionPaymentsApi.createPayment({
       idempotencyKey: crypto.randomUUID(),
       sourceId: body.sourceId,
       amountMoney: {
@@ -98,7 +111,7 @@ const createPaymentForGiftCertificate = async (body) => {
     }
     const netAmount = parseInt(submission.amount) - submission.discount;
 
-    const customerResult = await customersApi.searchCustomers({
+    const customerResult = await productionCustomersApi.searchCustomers({
       query: { filter: { emailAddress: { exact: body.customer.email } } },
     });
     let customer = null;
@@ -110,7 +123,7 @@ const createPaymentForGiftCertificate = async (body) => {
       customer = customerResult.result.customers[0];
     }
     if (customer === null) {
-      const response = await customersApi.createCustomer({
+      const response = await productionCustomersApi.createCustomer({
         givenName: body.customer.firstName,
         familyName: body.customer.lastName,
         emailAddress: body.customer.email,
@@ -125,7 +138,7 @@ const createPaymentForGiftCertificate = async (body) => {
       }
     }
 
-    const { result } = await paymentsApi.createPayment({
+    const { result } = await productionPaymentsApi.createPayment({
       idempotencyKey: crypto.randomUUID(),
       sourceId: body.sourceId,
       amountMoney: {
@@ -149,4 +162,102 @@ const createPaymentForGiftCertificate = async (body) => {
   }
 };
 
-module.exports = { createPayment, createPaymentForGiftCertificate };
+const createPaymentForVisaScore = async (body) => {
+  try {
+    // Check if Square Sandbox API is properly configured
+    if (!process.env.SQUARE_SANDBOX_ACCESS_TOKEN) {
+      console.error('Square sandbox access token not configured');
+      return {
+        errors: [{
+          category: "CONFIGURATION_ERROR",
+          code: "SQUARE_SANDBOX_NOT_CONFIGURED",
+          detail: "Square sandbox payment system is not properly configured. Please set SQUARE_SANDBOX_ACCESS_TOKEN in your environment variables."
+        }]
+      };
+    }
+
+    console.log('Using Square Sandbox environment for visa score payments');
+    console.log('Square sandbox access token configured:', !!process.env.SQUARE_SANDBOX_ACCESS_TOKEN);
+    
+    const submission = await findById(body.submissionId, "VisaScores");
+    if (submission.notFound) {
+      console.log(
+        "This should not happen. Submission Id not found: " + body.submissionId
+      );
+      return {
+        errors: [{
+          category: "NOT_FOUND",
+          code: "SUBMISSION_NOT_FOUND",
+          detail: "Visa score submission not found"
+        }]
+      };
+    }
+    
+    // Fixed price for visa score report
+    const visaScorePrice = 29.99; // $29.99 for complete visa score report
+    
+    const customerResult = await sandboxCustomersApi.searchCustomers({
+      query: { filter: { emailAddress: { exact: body.customer.email } } },
+    });
+    let customer = null;
+    if (
+      customerResult.result &&
+      customerResult.result.customers &&
+      customerResult.result.customers.length > 0
+    ) {
+      customer = customerResult.result.customers[0];
+    }
+    if (customer === null) {
+      const response = await sandboxCustomersApi.createCustomer({
+        givenName: body.customer.firstName,
+        familyName: body.customer.lastName,
+        emailAddress: body.customer.email,
+      });
+
+      if (response.result.customer) {
+        customer = response.result.customer;
+      } else {
+        console.log('Square sandbox customer creation error:', response.result.errors);
+        return response.result.errors;
+      }
+    }
+
+    const { result } = await sandboxPaymentsApi.createPayment({
+      idempotencyKey: crypto.randomUUID(),
+      sourceId: body.sourceId,
+      amountMoney: {
+        currency: "USD",
+        amount: Math.round(visaScorePrice * 100), // Convert to cents
+      },
+      referenceId: body.submissionId,
+      buyerEmailAddress: body.customer.email,
+      billingAddress: body.customer.address,
+      customerId: customer.id,
+      note: "Visa Score Report - Booking For Visa (Sandbox)",
+    });
+    return result;
+  } catch (error) {
+    console.error('Error in createPaymentForVisaScore (Sandbox):', error);
+    
+    // Handle Square API errors specifically
+    if (error.errors && Array.isArray(error.errors)) {
+      console.log('Square Sandbox API errors:', error.errors);
+      return error; // Return the Square error directly
+    }
+    
+    let err = error;
+    if (error.body) {
+      err = error.body;
+    }
+    console.log('Generic error:', err);
+    return {
+      errors: [{
+        category: "INTERNAL_ERROR",
+        code: "PAYMENT_CREATION_FAILED",
+        detail: "Failed to create payment for visa score in sandbox"
+      }]
+    };
+  }
+};
+
+module.exports = { createPayment, createPaymentForGiftCertificate, createPaymentForVisaScore };

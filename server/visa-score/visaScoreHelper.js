@@ -21,7 +21,8 @@ const submitVisaScore = async (scoreData) => {
       visaScore: visaScoreResult, // Store full score internally
       freemiumScore: freemiumResponse, // Store freemium version
       createdAt: new Date(),
-      type: 'visaScore'
+      type: 'visaScore',
+      isPaid: false
     };
 
     const result = await insert(submission, 'VisaScores');
@@ -458,108 +459,358 @@ const countryTiers = {
     };
   };
 
-const generateReport = (scoreData, formData = {}) => {
-  const { breakdown } = scoreData;
+function renderDestinationAdvice(destination) {
+  const destinationAdvice = {
+    "Schengen": {
+      riskLevel: "high",
+      rejectionCauses: [
+        "fake or unverifiable hotel/flight bookings",
+        "insufficient bank balance",
+        "unclear itinerary or travel purpose"
+      ],
+      tips: [
+        "Book travel insurance with at least €30,000 coverage.",
+        "Create a day-by-day itinerary that matches your bookings.",
+        "Bank statements should reflect enough funds to cover €60–100/day."
+      ]
+    },
+    "United States": {
+      riskLevel: "very_high",
+      rejectionCauses: [
+        "weak home country ties",
+        "vague or suspicious trip purpose",
+        "inconsistencies in previous applications or interviews"
+      ],
+      tips: [
+        "Clearly explain your visit in the DS-160 form.",
+        "Prepare for a short interview with truthful answers.",
+        "Show job, family, or property ties to your home country."
+      ]
+    },
+    "United Kingdom": {
+      riskLevel: "high",
+      rejectionCauses: [
+        "insufficient proof of income or funds",
+        "unclear travel itinerary",
+        "lack of home country obligations"
+      ],
+      tips: [
+        "Provide recent bank statements showing funds well above your expected expenses.",
+        "If studying, include CAS, TB test, and tuition payment proof.",
+        "Include a strong cover letter outlining your itinerary and intent to return.",
+        "Employment letters and property ownership documents strengthen your ties."
+      ]
+    },
+    "Canada": {
+      riskLevel: "high",
+      rejectionCauses: [
+        "insufficient funds (especially for study)",
+        "weak home ties",
+        "vague or inconsistent study or work plans"
+      ],
+      tips: [
+        "For student visas, provide proof of tuition payment and GIC.",
+        "Include a Statement of Purpose clearly explaining your study plan.",
+        "If visiting family, include an invitation letter and their status documents.",
+        "Highlight ties to your home country, such as job offers or family obligations."
+      ]
+    },
+    "Australia": {
+      riskLevel: "high",
+      rejectionCauses: [
+        "low financial capability",
+        "unverifiable documents",
+        "no compelling reason to return"
+      ],
+      tips: [
+        "Submit evidence of strong income, savings, or financial sponsorship.",
+        "If on a tourist visa, provide a solid trip plan and hotel bookings.",
+        "Your employment and assets in your home country support your case.",
+        "Avoid vague purposes — be clear and specific in your cover letter."
+      ]
+    },
+    "Japan": {
+      riskLevel: "medium",
+      rejectionCauses: [
+        "insufficient itinerary details",
+        "missing financial proof",
+        "unverified bookings"
+      ], 
+      tips: [
+        "Your itinerary should include exact travel dates and locations.",
+        "Include hotel and flight confirmations (even temporary bookings).",
+        "Provide recent bank statements showing sufficient funds.",
+        "For group or family travel, submit documents for all travelers together."
+      ]
+    },
+    "South Korea": {
+      riskLevel: "medium",
+      rejectionCauses: [
+        "unclear travel purpose",
+        "incomplete bank documentation",
+        "lack of home country ties"
+      ], 
+      tips: [
+        "Submit a full itinerary, even if short.",
+        "Ensure your bank documents match your declared employment or business.",
+        "Traveling with family or coworkers? Submit all documents together.",
+        "Employment or academic certificates help boost credibility."
+      ]
+    },
+    "United Arab Emirates": {
+      riskLevel: "medium",
+      rejectionCauses: [
+        "fake hotel bookings",
+        "unclear purpose",
+        "prior overstays"
+      ], 
+      tips: [
+        "Use an agent or official website for visa issuance if required.",
+        "Submit valid hotel and flight bookings.",
+        "A clear purpose (business/tourism/family visit) helps avoid rejection.",
+        "Avoid last-minute applications to prevent suspicion."
+      ]
+    },
+    "Saudi Arabia": {
+      riskLevel: "medium",
+      rejectionCauses: [
+        "lack of travel history",
+        "religious or family status ambiguity",
+        "unclear travel intent"
+      ], 
+      tips: [
+        "Apply through the official portal and upload all supporting documents.",
+        "If applying for Umrah, include travel agent booking and sponsor letter (if needed).",
+        "Avoid inconsistencies in passport or travel history.",
+        "Show ties to home country, even for short visits."
+      ]
+    },
+    "Turkey": {
+      riskLevel: "medium",
+      rejectionCauses: [
+        "low financial capability",
+        "unrealistic travel plan",
+        "prior visa denials"
+      ], 
+      tips: [
+        "Provide proof of hotel bookings and return flights.",
+        "Make sure you have bank balance to cover ~$50/day.",
+        "Avoid applying if recently denied by Schengen/US/UK — wait and improve your profile.",
+        "State your travel companions and planned duration clearly."
+      ]
+    }
+};
+  const advice = destinationAdvice[destination];
+  if (!advice) return '';
+
+  let html = `
+    <div class="destination-advice warning">
+      <h2>Important notes about ${destination}</h2>
+      <p><strong>Risk Level:</strong> ${advice.riskLevel.replace('_', ' ').toUpperCase()}</p>
+      <p><strong>Common Rejection Reasons:</strong></p>
+      <ul>`;
+  advice.rejectionCauses.forEach(reason => {
+    html += `<li>${reason}</li>`;
+  });
+  html += `</ul><p><strong>Tips to Improve Your Application:</strong></p><ul>`;
+  advice.tips.forEach(tip => {
+    html += `<li>${tip}</li>`;
+  });
+  html += `</ul></div>`;
+
+  return html;
+}
+
+
+const generateReport = (scoreData) => {
+  const { breakdown } = scoreData.visaScore;
   const suggestions = [];
+
+  const getComment = (score, category) => {
+    const bands = {
+      travel: [
+        [15, 20, "You have an excellent travel history, which strongly supports your application. Visits to stable, visa-friendly countries are a big plus."],
+        [10, 14, "Your travel history is decent. Adding more travel to countries with strong visa reputations can further improve your profile."],
+        [0, 9, "Your travel history is limited. This may raise concerns about your global mobility experience."]
+      ],
+      financial: [
+        [20, 25, "You appear financially strong and well-prepared to support your trip."],
+        [15, 19, "Your finances are adequate but could be improved to enhance confidence in your ability to fund your travel."],
+        [0, 14, "Your financial documentation may be insufficient. Visa officers could question your ability to afford your trip."]
+      ],
+      ties: [
+        [12, 15, "You have demonstrated strong ties to your home country, reducing perceived overstay risk."],
+        [8, 11, "Your home ties are moderate. Additional proof of obligations at home can boost your case."],
+        [0, 7, "Limited ties to home country could make your application riskier in the eyes of the visa officer."]
+      ],
+      documents: [
+        [12, 15, "Your documents appear complete and well-organized."],
+        [8, 11, "Some key documents are in place, but consider adding more proof to improve clarity."],
+        [0, 7, "Your documentation is lacking or incomplete. Strengthen this area with a full set of supporting files."]
+      ],
+      risk: [
+        [8, 10, "No major red flags detected in your profile."],
+        [5, 7, "There are some moderate concerns in your profile. Mitigating them with strong evidence is advised."],
+        [0, 4, "Multiple risk factors may affect your application's success."]
+      ],
+      visitingCountry: [
+        [-10, -7, "The country you are visiting has very strict visa requirements. Make sure all aspects of your application are very strong."],
+        [-6, -3, "You are applying for a visa to a moderately difficult country. Pay close attention to documentation."],
+        [-2, 0, "The destination country's visa requirements are relatively lenient. Still, ensure your application is thorough."]
+      ]
+    };
+
+    for (const [min, max, msg] of bands[category]) {
+      if (score >= min && score <= max) return msg;
+    }
+    return '';
+  };
+
+  
+  
+
+  // ----------------------------
+  // Build "How You Scored"
+  // ----------------------------
+  let scoreHtml = `<div class="improvements recommendation">
+    <h2>How You Scored</h2>`;
+  
+  const categoryMaxPoints = {
+    travel: 20,
+    financial: 25,
+    ties: 15,
+    documents: 15,
+    risk: 10,
+    visitingCountry: 0 // This can be negative, so we'll handle it specially
+  };
+  
+  ['travel', 'financial', 'ties', 'documents', 'risk', 'visitingCountry'].forEach((category) => {
+    const score = breakdown[category];
+    const maxPoints = categoryMaxPoints[category];
+    const label = {
+      travel: "Travel History",
+      financial: "Financial Strength",
+      ties: "Ties to Home Country",
+      documents: "Documentation",
+      risk: "Risk Factors",
+      visitingCountry: "Visiting Country Difficulty"
+    }[category];
+
+    // Special handling for visitingCountry since it can be negative
+    let pointsDisplay;
+    if (category === 'visitingCountry') {
+      pointsDisplay = `${score} points (deduction)`;
+    } else {
+      pointsDisplay = `${score}/${maxPoints} points`;
+    }
+
+    scoreHtml += `
+      <div class="suggestion-item">
+        <h3>${label} (${pointsDisplay})</h3>
+        <div>${getComment(score, category)}</div>
+      </div>`;
+  });
+  scoreHtml += `</div>`;
+
+  // ----------------------------
+  // Build Suggestions (if needed)
+  // ----------------------------
 
   // Travel History (Max 20)
   if (breakdown.travel < 10) {
-      suggestions.push({
-          title: "Improve Your Travel History",
-          text: "Your travel history score is low. Visiting more countries, especially well-regarded ones (like in Europe, North America, or Australia), can significantly strengthen your profile. Even trips to nearby countries can help."
-      });
+    suggestions.push({
+      title: "Improve Your Travel History",
+      text: "Your travel history score is low. Visiting more countries, especially well-regarded ones (like in Europe, North America, or Australia), can significantly strengthen your profile. Even trips to nearby countries can help."
+    });
   }
 
   // Financial Strength (Max 25)
   if (breakdown.financial < 15) {
-      let text = "Your financial score could be improved. Ensure you provide clear evidence of sufficient funds for your trip. Based on your purpose of travel, consider the following: <ul>";
-      if (scoreData.visitPurpose === 'tourism') {
-          text += "<li>Provide bank statements for the last 6 months showing a healthy and stable balance.</li>";
-          if (!scoreData.hasStableEmployment || scoreData.hasStableEmployment === 'no') text += "<li>If employed, a letter from your employer confirming your position and salary.</li>";
-          if (!scoreData.hasAssets || scoreData.hasAssets === 'no') text += "<li>Documents showing ownership of assets (property, car, investments).</li>";
-          if (!scoreData.hasSponsorLetter || scoreData.hasSponsorLetter === 'no') text += "<li>If sponsored, a formal sponsor letter and the sponsor's financial documents.</li>";
-      } else if (scoreData.visitPurpose === 'study') {
-          text += "<li>Proof that tuition fees are fully paid is a significant plus.</li>";
-          if (scoreData.hasTuitionCovered !== 'yes') text += "<li>If you have a partial scholarship, provide the award letter.</li>";
-          text += "<li>Your sponsor's financial documents must be strong and clearly show their ability to support you.</li>";
-          text += "<li>Show evidence of sufficient funds for your entire planned stay.</li>";
-      } else if (scoreData.visitPurpose === 'business') {
-          text += "<li>Provide strong company financial statements and tax returns for the last 1-2 years.</li>";
-          if (!scoreData.hasBusinessInvitation || scoreData.hasBusinessInvitation === 'no') text += "<li>A formal invitation letter from the business partner in the destination country is crucial.</li>";
-          text += "<li>Show proof of personal savings and assets as a backup.</li>";
-      } else if (scoreData.visitPurpose === 'work') {
-          if (!scoreData.hasJobOffer || scoreData.hasJobOffer === 'no') text += "<li>A valid job offer from a reputable company is the most important document.</li>";
-          text += "<li>Provide evidence of sufficient funds to cover relocation and initial living costs until you receive your first salary.</li>";
-          text += "<li>Show proof of personal assets or financial backup from family.</li>";
-      } else {
-           text += "<li>Provide bank statements showing a stable and sufficient balance.</li>";
-           text += "<li>Show proof of a stable income or source of funds.</li>";
-      }
-      text += "</ul>";
-      suggestions.push({
-          title: "Strengthen Your Financial Profile",
-          text: text
-      });
+    let text = "Your financial score could be improved. Ensure you provide clear evidence of sufficient funds for your trip. Based on your purpose of travel, consider the following: <ul>";
+    if (scoreData.visitPurpose === 'tourism') {
+      text += "<li>Provide bank statements for the last 6 months showing a healthy and stable balance.</li>";
+      if (scoreData.hasStableEmployment !== 'yes') text += "<li>Include a letter from your employer confirming your position and salary.</li>";
+      if (scoreData.hasAssets !== 'yes') text += "<li>Show ownership of assets like property, vehicles, or investments.</li>";
+      if (scoreData.hasSponsorLetter !== 'yes') text += "<li>If sponsored, include a sponsor letter and their financials.</li>";
+    } else if (scoreData.visitPurpose === 'study') {
+      text += "<li>Proof of tuition fee payment is essential.</li>";
+      if (scoreData.hasTuitionCovered !== 'yes') text += "<li>Include a scholarship award letter if applicable.</li>";
+      text += "<li>Your sponsor's financial documents must clearly show sufficient funding.</li>";
+    } else if (scoreData.visitPurpose === 'business') {
+      text += "<li>Include business financial statements and tax returns.</li>";
+      if (scoreData.hasBusinessInvitation !== 'yes') text += "<li>An invitation letter from your business partner is essential.</li>";
+    } else if (scoreData.visitPurpose === 'work') {
+      if (scoreData.hasJobOffer !== 'yes') text += "<li>Include a valid job offer from a reputable company.</li>";
+      text += "<li>Provide proof of funds for relocation and initial living expenses.</li>";
+    }
+    text += "</ul>";
+    suggestions.push({ title: "Strengthen Your Financial Profile", text });
   }
 
   // Ties to Home Country (Max 15)
   if (breakdown.ties < 10) {
-      suggestions.push({
-          title: "Demonstrate Stronger Ties to Your Home Country",
-          text: "It's critical to convince the visa officer that you will return home after your visit. Strengthen this area by providing: <ul><li>Evidence of immediate family (spouse, children) residing in your home country (e.g., birth/marriage certificates).</li><li>A letter from your employer stating you have a job to return to.</li><li>Proof of property ownership or significant long-term investments at home.</li></ul>"
-      });
+    suggestions.push({
+      title: "Demonstrate Stronger Ties to Your Home Country",
+      text: "It's critical to convince the visa officer that you will return home after your visit. Provide: <ul><li>Proof of family (spouse/children) in your home country.</li><li>A job letter showing ongoing employment.</li><li>Property or investment ownership documents.</li></ul>"
+    });
   }
 
   // Documents Preparedness (Max 15)
   if (breakdown.documents < 10) {
-      suggestions.push({
-          title: "Improve Your Document Preparedness",
-          text: "A complete and well-organized application makes a strong impression. Make sure you include: <ul><li>A detailed, well-written cover letter explaining your purpose of travel and itinerary.</li><li>Bank statements for the last 3-6 months.</li><li>Flight and hotel reservations (you can get these without payment).</li></ul>"
-      });
+    suggestions.push({
+      title: "Improve Your Document Preparedness",
+      text: "Make sure you include: <ul><li>Cover letter explaining your trip purpose.</li><li>Recent bank statements (3–6 months).</li><li>Flight and hotel reservations (provisional bookings accepted).</li></ul>"
+    });
   }
 
   // Risk Factors (Max 10)
   if (breakdown.risk < 7) {
-      suggestions.push({
-          title: "Address Potential Risk Factors",
-          text: "Your profile may have elements that visa officers perceive as high-risk (this can be related to age, marital status, or previous visa denials). To mitigate this, it's essential to make other parts of your application exceptionally strong, especially your financial standing and ties to your home country."
-      });
+    suggestions.push({
+      title: "Address Potential Risk Factors",
+      text: "Your profile may have elements that visa officers perceive as risky. Make other parts of your application exceptionally strong — especially finances and home ties."
+    });
   }
-  
+
   // Visiting Country Difficulty
-  if (breakdown.visitingCountry < -6) { // e.g. -10 for US
-       suggestions.push({
-          title: "Acknowledge the High Visa Difficulty",
-          text: `The country you are visiting has very strict visa policies, which has deducted ${Math.abs(breakdown.visitingCountry)} points from your score. This means your application must be impeccable. Double-check every single requirement and provide as much supporting evidence as you can for all your claims.`
-      });
+  if (breakdown.visitingCountry < -6) {
+    suggestions.push({
+      title: "Acknowledge the High Visa Difficulty",
+      text: `The country you are visiting has very strict visa policies, which deducted ${Math.abs(breakdown.visitingCountry)} points. Make your application bulletproof.`
+    });
   }
 
+  // ----------------------------
+  // Final HTML Output
+  // ----------------------------
   if (suggestions.length === 0) {
-      return `
-          <div class="improvements">
-              <h3>Congratulations on a Strong Profile!</h3>
-              <p>Your visa profile appears to be very strong. Based on our assessment, you have a high chance of success. Ensure all your documents are genuine, well-organized, and you present your case clearly and confidently to the visa officer. Good luck!</p>
-          </div>
-      `;
+    return `
+      ${scoreHtml}
+      <div class="improvements success">
+        <h3>Congratulations on a Strong Profile!</h3>
+        <p>Your visa profile appears to be very strong. Based on our assessment, you have a high chance of success. Ensure all your documents are genuine, well-organized, and you present your case clearly and confidently to the visa officer.</p>
+      </div>
+    `;
   }
 
-  let html = `
-      <div class="improvements">
-        <h2>How to Improve Your Score</h2>
-        <p>Based on your profile, here are some suggestions to strengthen your visa application:</p>
-  `;
+  let suggestionsHtml = `
+    <div class="improvements recommendation">
+      <h2>How to Improve Your Score</h2>
+      <p>Here are suggestions to strengthen your application:</p>`;
   suggestions.forEach(suggestion => {
-      html += `
-          <div class="suggestion-item">
-              <h3>${suggestion.title}</h3>
-              <div>${suggestion.text}</div>
-          </div>
-      `;
+    suggestionsHtml += `
+      <div class="suggestion-item">
+        <h3>${suggestion.title}</h3>
+        <div>${suggestion.text}</div>
+      </div>`;
   });
-  html += '</div>';
-
-  return html;
+  suggestionsHtml += `</div>`;
+  
+  const destinationAdviceHtml = renderDestinationAdvice(scoreData.visitingCountry);
+  // Append it to the final report
+  return scoreHtml + suggestionsHtml + destinationAdviceHtml;
+  
 };
+
 
 module.exports = {
   calculateVisaScore,

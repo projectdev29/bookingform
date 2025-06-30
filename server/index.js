@@ -5,12 +5,13 @@ const express = require("express");
 const cors = require("cors");
 const bodyParser = require("body-parser");
 
-const { insert, update } = require("./database/mongodbhelper");
+const { insert, update, findById, updatePaymentStatus } = require("./database/mongodbhelper");
 const { createTicket } = require("./zendesk/tickethelper");
 const { calculateTotal } = require("./pricing/pricinghelper");
 const {
   createPayment,
   createPaymentForGiftCertificate,
+  createPaymentForVisaScore,
 } = require("./payments/pay");
 const { validateCoupon, markCouponAsUsed } = require("./coupons/couponhelper");
 const {
@@ -27,6 +28,7 @@ const {
   deductAmountFromGiftCertificate,
 } = require("./giftcertificate/giftcertificatehelper");
 const { submitVisaScore } = require("./visa-score/visaScoreHelper");
+const { createVisaScoreEmailContent } = require("./email/emailhelper");
 
 const PORT = process.env.PORT || 3001;
 
@@ -74,6 +76,56 @@ app.post("/api/pay-for-gift-certificate", async (req, res) => {
   const result = await createPaymentForGiftCertificate(req.body);
   res.status(200).json(result);
 });
+
+app.post("/api/pay-for-visa-score", async (req, res) => {
+  try {
+    console.log('Received pay-for-visa-score request:', JSON.stringify(req.body, null, 2));
+    
+    // Validate request body
+    if (!req.body) {
+      console.error('No request body provided');
+      return res.status(400).json({ 
+        error: 'Bad Request', 
+        message: 'Request body is required' 
+      });
+    }
+
+    const result = await createPaymentForVisaScore(req.body);
+    console.log('Payment result:', JSON.stringify(result, null, 2));
+    
+    // If payment is successful, mark the submission as paid
+    if (result.payment && result.payment.status === 'COMPLETED') {
+      try {
+        const updateResult = await updatePaymentStatus(
+          req.body.submissionId, 
+          true,
+          "VisaScores"
+        );
+        
+        if (updateResult.succeeded) {
+          console.log('Successfully marked visa score submission as paid:', req.body.submissionId);
+        } else {
+          console.error('Failed to mark submission as paid:', updateResult.error);
+        }
+      } catch (updateError) {
+        console.error('Error updating submission payment status:', updateError);
+      }
+    }
+    
+    res.status(200).json(result);
+  } catch (error) {
+    console.error('Error in pay-for-visa-score endpoint:', error);
+    console.error('Error stack:', error.stack);
+    
+    // Ensure we always return JSON, never HTML
+    res.status(500).json({ 
+      error: 'Internal server error', 
+      message: error.message || 'An unexpected error occurred',
+      timestamp: new Date().toISOString()
+    });
+  }
+});
+
 
 app.post("/api/ticket", async (req, res) => {
   await markCouponAsUsed(req.body.coupon);
@@ -154,13 +206,77 @@ app.post("/api/submit-visa-score", async (req, res) => {
   const result = await submitVisaScore(req.body);
   if (result.success) {
     res.status(200).json({
-      visaScore: result.visaScore
+      visaScore: result.visaScore,
+      submissionId: result.data.id || result.data.insertedId
     });
   } else {
     res.status(400).json({ error: result.error });
   }
 });
 
+// Get visa score email content endpoint
+app.get("/api/visa-score-email-content", async (req, res) => {
+  try {
+    const { submissionId, customerName } = req.query;
+    
+    if (!submissionId) {
+      return res.status(400).json({ 
+        error: 'Bad Request', 
+        message: 'submissionId is required' 
+      });
+    }
+
+    // Get the visa score submission from database
+    const submission = await findById(submissionId, "VisaScores");
+    if (submission.notFound) {
+      return res.status(404).json({ 
+        error: 'Not Found', 
+        message: 'Visa score submission not found' 
+      });
+    }
+
+    // Check if the submission is paid
+    if (!submission.isPaid) {
+      return res.status(402).json({ 
+        error: 'Payment Required', 
+        message: 'This visa score report requires payment before the full content can be accessed' 
+      });
+    }
+
+    // Extract customer email and name
+    const customerEmail = submission.email;
+    const name = customerName || submission.fullName || 'Valued Customer';
+
+    // Get the full visa score data (not just freemium)
+    const scoreData = submission.visaScore;
+    
+    if (!scoreData) {
+      return res.status(400).json({ 
+        error: 'Bad Request', 
+        message: 'No visa score data found in submission' 
+      });
+    }
+
+    // Generate email content
+    const emailContent = createVisaScoreEmailContent(customerEmail, name, submission);
+    
+    res.status(200).json({
+      success: true,
+      emailContent: {
+        html: emailContent.html_body,        
+      },
+      submissionId: submissionId
+    });
+    
+  } catch (error) {
+    console.error('Error generating visa score email content:', error);
+    res.status(500).json({ 
+      error: 'Internal server error', 
+      message: error.message || 'An unexpected error occurred',
+      timestamp: new Date().toISOString()
+    });
+  }
+});
 
 app.get("*", (req, res) => {
   res.sendFile(path.resolve(__dirname, "../client/build", "index.html"));
