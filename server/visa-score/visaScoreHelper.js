@@ -791,66 +791,353 @@ const generateReport = (scoreData) => {
   // ----------------------------
 
   // Travel History (Max 20)
-  if (breakdown.travel < 10) {
+  if (breakdown.travel < 9) {
     suggestions.push({
       title: "Improve Your Travel History",
-      text: "Your travel history score is low. Visiting more countries, especially well-regarded ones (like in Europe, North America, or Australia), can significantly strengthen your profile. Even trips to nearby countries can help."
+      text: `
+        Your travel history is currently limited, which may prompt additional scrutiny from visa officers. A strong travel record helps demonstrate that you're likely to respect visa rules and return on time.
+    
+        <ul>
+          <li>Consider taking trips to countries with straightforward visa processes to build credibility.</li>
+          <li>Maintain complete documentation for each trip, including entry/exit stamps, visas, and travel itineraries.</li>
+          <li>When possible, highlight past trips with valid returns and no overstays.</li>
+        </ul>
+    
+        If you're applying for a visa to a stricter country, ensure that other parts of your application — especially finances, home ties, and documents — are particularly strong.
+      `
+    });    
+  } else if (breakdown.travel < 15) {
+    suggestions.push({
+      title: "Strengthen Your Travel Record",
+      text: `
+        You have some travel experience, which helps, but your profile could benefit from a more extensive or diverse history. Visa officers often look for consistency and reliability in travel patterns.
+    
+        <ul>
+          <li>Continue traveling to well-regarded or stable countries and keeping records of your trips.</li>
+          <li>Demonstrate past visa compliance — no overstays, timely returns, and complete documents.</li>
+          <li>Include any work-related or educational trips in your record, if relevant.</li>
+        </ul>
+    
+        A stronger travel history can provide confidence in your reliability as a traveler, especially when applying to destinations with tighter scrutiny.
+      `
+    });    
+  } else {
+    scoreComments.push({
+      title: "Strong Travel History",
+      text: `
+        Your travel history is excellent. It reflects consistency, responsible travel behavior, and compliance with past visa requirements. This strengthens your overall application profile.
+    
+        <ul>
+          <li>Continue maintaining detailed documentation of each trip.</li>
+          <li>If applying for a more scrutinized destination, reference past successful visas in your cover letter.</li>
+        </ul>
+      `
     });
+    
   }
 
   // Financial Strength (Max 25)
   if (breakdown.financial < 15) {
-    let text = "Your financial score could be improved. Ensure you provide clear evidence of sufficient funds for your trip. Based on your purpose of travel, consider the following: <ul>";
-    if (scoreData.visitPurpose === 'tourism') {
-      text += "<li>Provide bank statements for the last 6 months showing a healthy and stable balance.</li>";
-      if (scoreData.hasStableEmployment !== 'yes') text += "<li>Include a letter from your employer confirming your position and salary.</li>";
-      if (scoreData.hasAssets !== 'yes') text += "<li>Show ownership of assets like property, vehicles, or investments.</li>";
-      if (scoreData.hasSponsorLetter !== 'yes') text += "<li>If sponsored, include a sponsor letter and their financials.</li>";
-    } else if (scoreData.visitPurpose === 'study') {
-      text += "<li>Proof of tuition fee payment is essential.</li>";
-      if (scoreData.hasTuitionCovered !== 'yes') text += "<li>Include a scholarship award letter if applicable.</li>";
-      text += "<li>Your sponsor's financial documents must clearly show sufficient funding.</li>";
-    } else if (scoreData.visitPurpose === 'business') {
-      text += "<li>Include business financial statements and tax returns.</li>";
-      if (scoreData.hasBusinessInvitation !== 'yes') text += "<li>An invitation letter from your business partner is essential.</li>";
-    } else if (scoreData.visitPurpose === 'work') {
-      if (scoreData.hasJobOffer !== 'yes') text += "<li>Include a valid job offer from a reputable company.</li>";
-      text += "<li>Provide proof of funds for relocation and initial living expenses.</li>";
-    }
-    text += "</ul>";
-    suggestions.push({ title: "Strengthen Your Financial Profile", text });
+    
+    suggestions.push({
+      title: "Strengthen Your Financial Profile",
+      text: `
+        Your financial documentation currently appears insufficient, which could raise doubts about your ability to fund your travel. Visa officers often rely on financial proof to assess whether an applicant can afford the trip and is likely to return.
+    
+        <p>To improve your financial credibility, we recommend the following:</p>
+        <ul>
+          <li>Submit 6 months of recent bank statements showing a stable and healthy balance.</li>
+          <li>Include salary slips or a letter from your employer confirming your role and income.</li>
+          <li>Add proof of owned assets such as property, investments, or vehicles.</li>
+          <li>If sponsored, attach a formal sponsor letter and their financial documents.</li>
+        </ul>
+    
+        ${
+          scoreData.visitPurpose === 'tourism'
+            ? `<p>For tourist visas, demonstrating personal financial independence is especially important.</p>`
+            : scoreData.visitPurpose === 'study'
+            ? `<p>For study visas, include tuition payment receipts or scholarship letters, and ensure the sponsor's income meets the cost of living requirements in the destination country.</p>`
+            : scoreData.visitPurpose === 'work'
+            ? `<p>For work visas, submit a valid job offer and evidence of funds to cover relocation and the first few months of expenses.</p>`
+            : scoreData.visitPurpose === 'business'
+            ? `<p>For business visas, include business tax returns, financial statements, and a formal business invitation letter if available.</p>`
+            : ''
+        }
+    
+        <p>Strong financial documentation not only proves your ability to afford the trip but also strengthens your overall reliability in the eyes of the visa officer.</p>
+      `
+    });
+    
+  } else if (breakdown.financial < 20) {
+    suggestions.push({
+      title: "Enhance Your Financial Readiness",
+      text: `
+        Your financial situation appears acceptable, but improvements could increase confidence in your application. Visa officers may expect a higher level of detail depending on your travel purpose and destination.
+    
+        <ul>
+          <li>Ensure your bank statements reflect a consistent and sufficient balance.</li>
+          <li>If employed, include a salary certificate or employment letter.</li>
+          <li>Add documentation for any assets or passive income.</li>
+          <li>If someone else is funding your trip, provide their financials and a formal sponsorship letter.</li>
+        </ul>
+    
+        ${
+          scoreData.visitPurpose === 'tourism'
+            ? `<p>For tourism, higher balances and longer banking history can reduce risk concerns.</p>`
+            : scoreData.visitPurpose === 'study'
+            ? `<p>For study visas, financial coverage for tuition and living expenses should be clearly demonstrated.</p>`
+            : scoreData.visitPurpose === 'work'
+            ? `<p>For work visas, showing enough funds to cover your transition period adds strength to your case.</p>`
+            : scoreData.visitPurpose === 'business'
+            ? `<p>For business travel, include business financials and any revenue or partnership documentation.</p>`
+            : ''
+        }
+    
+        <p>While your finances are not a red flag, enhancing your documentation will improve your chances.</p>
+      `
+    });
+    
+  } else {
+    scoreComments.push({
+      title: "Strong Financial Profile",
+      text: `
+        Your financial profile is well-documented and demonstrates your ability to fund your travel independently and responsibly. This is a key strength in your application.
+    
+        <ul>
+          <li>Bank statements and assets are sufficient and clearly presented.</li>
+          <li>If sponsored, your supporting documents show a reliable and capable sponsor.</li>
+        </ul>
+    
+        ${
+          scoreData.visitPurpose === 'study'
+            ? `<p>Your funding plan for tuition and living expenses appears complete. Be sure to submit receipts and scholarship letters where relevant.</p>`
+            : scoreData.visitPurpose === 'work'
+            ? `<p>Your job offer and transition finances make your relocation plan credible and low-risk.</p>`
+            : ''
+        }
+    
+        Keep your documents consistent, up to date, and aligned with the purpose of your visit.
+      `
+    });
+    
   }
 
   // Ties to Home Country (Max 15)
-  if (breakdown.ties < 10) {
+  if (breakdown.ties < 8) {
     suggestions.push({
       title: "Demonstrate Stronger Ties to Your Home Country",
-      text: "It's critical to convince the visa officer that you will return home after your visit. Provide: <ul><li>Proof of family (spouse/children) in your home country.</li><li>A job letter showing ongoing employment.</li><li>Property or investment ownership documents.</li></ul>"
+      text: `
+        Visa officers need confidence that applicants will return to their home country after the trip. Right now, your profile shows limited evidence of such ties, which can raise concerns about overstay risk.
+    
+        <p>To improve this area, consider submitting:</p>
+        <ul>
+          <li><strongEmployment Proof:</strong> A letter from your current employer stating your position, salary, and expected return date.</li>
+          <li><strong>Family Ties:</strong> Marriage certificate, children's birth certificates, or dependent documents proving immediate family remains in your home country.</li>
+          <li><strong>Property or Investments:</strong> Documents showing ownership of real estate, land, or significant long-term financial investments.</li>
+          <li><strong>Educational Commitments:</strong> If studying, include an enrollment letter and exam schedule or academic plan.</li>
+        </ul>
+    
+        <p>Establishing strong and verifiable ties will significantly enhance your application's credibility.</p>
+      `
     });
+  } else if (breakdown.ties < 12) {
+    suggestions.push({
+      title: "Reinforce Your Home Country Commitments",
+      text: `
+        Your application shows some connection to your home country, but additional documentation could further reduce perceived risk.
+    
+        <p>Consider the following enhancements:</p>
+        <ul>
+          <li>Attach a job letter confirming your current employment and expected return.</li>
+          <li>Include documents showing family living with or dependent on you in your home country.</li>
+          <li>If you own property, provide legal documents such as title deeds or utility bills in your name.</li>
+        </ul>
+    
+        <p>The stronger your visible ties, the lower the perceived overstay risk—especially for tourist or temporary visit visas.</p>
+      `
+    });
+  } else {
+    scoreComments.push({
+      title: "Strong Home Country Ties",
+      text: `
+        Your profile shows solid connections to your home country, which is a major positive in your visa application. This significantly reduces overstay concerns for the reviewing officer.
+    
+        <ul>
+          <li>Your employment, family, or property ties are clearly documented and verifiable.</li>
+          <li>Make sure all submitted documents remain current and are easy to cross-check (e.g., employment verification, lease deeds, or utility bills).</li>
+        </ul>
+    
+        Maintaining and accurately presenting these ties will continue to work in your favor.
+      `
+    });    
+    
   }
 
   // Documents Preparedness (Max 15)
   if (breakdown.documents < 10) {
     suggestions.push({
-      title: "Improve Your Document Preparedness",
-      text: "Make sure you include: <ul><li>Cover letter explaining your trip purpose.</li><li>Recent bank statements (3–6 months).</li><li>Flight and hotel reservations (provisional bookings accepted).</li></ul>"
+      title: "Significantly Improve Your Document Preparation",
+      text: `
+        Your submitted documentation appears incomplete or insufficient, which may weaken your application. Visa officers place high importance on a well-organized and thorough application file.
+    
+        <p>Ensure you include the following essential items:</p>
+        <ul>
+          <li><strong>Cover Letter:</strong> A well-written letter outlining your travel purpose, itinerary, and funding sources.</li>
+          <li><strong>Bank Statements:</strong> 3–6 months of recent financial records showing sufficient and consistent funds.</li>
+          <li><strong>Travel Itinerary:</strong> Day-by-day schedule that matches your bookings and trip purpose.</li>
+          <li><strong>Flight and Hotel Reservations:</strong> Confirmed or provisional bookings (even without full payment).</li>
+          <li><strong>Insurance:</strong> Travel or medical insurance with coverage as required by the destination country.</li>
+        </ul>
+    
+        <p>Organize these documents clearly, use consistent names across all files, and avoid any ambiguity or missing information.</p>
+      `
     });
+    
+  } else if (breakdown.documents < 12) {
+    suggestions.push({
+      title: "Enhance Document Clarity and Completeness",
+      text: `
+        Your application includes many of the required documents, but there's room for improvement in clarity, consistency, or supporting detail.
+    
+        <p>To strengthen your case, we recommend:</p>
+        <ul>
+          <li>Revising your <strong>cover letter</strong> to clearly explain your purpose of travel, who is funding the trip, and return plans.</li>
+          <li>Ensuring <strong>bank statements</strong> are up-to-date, in your name, and free of large unexplained deposits.</li>
+          <li>Aligning your <strong>itinerary</strong> with actual flight and hotel reservations.</li>
+          <li>Adding any <strong>optional documents</strong> like employment letters, school enrollment, or sponsor affidavits.</li>
+        </ul>
+    
+        <p>Clear, verifiable, and well-presented documentation can significantly reduce doubts in a visa officer's mind.</p>
+      `
+    });
+    
+    
+  } else {
+    scoreComments.push({
+      title: "Well-Prepared Documentation",
+      text: `
+        Your submitted documents appear complete, well-organized, and aligned with your travel purpose. This adds credibility to your application and helps the visa officer make a quick, favorable assessment.
+    
+        <ul>
+          <li>Ensure all files remain consistent in name, date, and purpose.</li>
+          <li>Keep physical and digital copies readily accessible in case of further review or interview.</li>
+        </ul>
+    
+        Good documentation is a strong foundation of any successful visa application.
+      `
+    });
+    
   }
 
   // Risk Factors (Max 10)
-  if (breakdown.risk < 7) {
+  if (breakdown.risk < 5) {
     suggestions.push({
-      title: "Address Potential Risk Factors",
-      text: "Your profile may have elements that visa officers perceive as risky. Make other parts of your application exceptionally strong — especially finances and home ties."
+      title: "Address Serious Risk Factors in Your Profile",
+      text: `
+        Your profile contains several risk indicators that could negatively impact your visa application. These risks may include factors such as:
+        <ul>
+          <li>Lack of travel history or previous visa rejections</li>
+          <li>Young, single applicants without stable income or assets</li>
+          <li>Overstays or immigration violations in the past</li>
+        </ul>
+    
+        <p>To improve your chances:</p>
+        <ul>
+          <li>Ensure your documentation is complete, truthful, and verifiable</li>
+          <li>Strengthen ties to your home country through job letters, property ownership, or family obligations</li>
+          <li>Demonstrate clear intent to return with a compelling cover letter</li>
+          <li>If possible, show progress since any previous visa refusal (e.g., stronger finances, more travel)</li>
+        </ul>
+    
+        <p>While risk cannot be fully eliminated, reinforcing other areas of your profile can help offset it.</p>
+      `
     });
+    
+  } else if (breakdown.risk < 8) {
+    suggestions.push({
+      title: "Mitigate Moderate Risk Indicators",
+      text: `
+        Your profile shows some risk factors that could raise questions during the visa evaluation process. These may include a short travel history, limited financial history, or unclear intent.
+    
+        <p>To strengthen your application:</p>
+        <ul>
+          <li>Double-check all documentation for consistency and completeness</li>
+          <li>Include strong supporting documents for employment, family, or property</li>
+          <li>Use your cover letter to proactively address any unusual circumstances (e.g., gaps in employment, previous visa refusals)</li>
+        </ul>
+    
+        <p>Visa officers are trained to look for red flags — a proactive and transparent approach can improve your credibility.</p>
+      `
+    });
+    
+  } else {
+    scoreComments.push({
+      title: "Low-Risk Applicant Profile",
+      text: `
+        Your profile appears stable and low-risk from a visa officer's perspective. There are no major red flags that stand out, which is a positive sign for your application.
+    
+        <ul>
+          <li>Continue to maintain consistency across your documentation</li>
+          <li>Avoid last-minute changes to your itinerary or supporting documents</li>
+        </ul>
+    
+        A low-risk profile, combined with strong financials and ties to home, gives your application a solid foundation.
+      `
+    });
+     
   }
 
   // Visiting Country Difficulty
   if (breakdown.visitingCountry < -6) {
     suggestions.push({
-      title: "Acknowledge the High Visa Difficulty",
-      text: `The country you are visiting has very strict visa policies, which deducted ${Math.abs(breakdown.visitingCountry)} points. Make your application bulletproof.`
+      title: "Navigating a Strict Visa Destination",
+      text: `
+        The country you're applying to has very stringent visa requirements and a high rejection rate. This means your application will be reviewed closely, and any inconsistencies may lead to a denial.
+    
+        <p>To improve your chances:</p>
+        <ul>
+          <li>Ensure all documents are genuine, well-organized, and consistent</li>
+          <li>Include a clear, concise cover letter explaining your travel purpose and plans</li>
+          <li>Support every claim with evidence — for example, if employed, include a letter from your employer</li>
+          <li>Anticipate questions a visa officer might have and preemptively address them in your application</li>
+        </ul>
+    
+        <p>While the destination is known for being selective, a thoroughly prepared and transparent application can still succeed.</p>
+      `
     });
+    
+  } else if (breakdown.visitingCountry < -2) {
+    suggestions.push({
+      title: "Prepare Thoroughly for a Moderately Challenging Visa",
+      text: `
+        The country you're applying to has moderately strict visa policies. Applications are approved if the documentation is strong and your intent is clearly stated.
+    
+        <p>To enhance your application:</p>
+        <ul>
+          <li>Ensure your travel plans are well-documented (flights, hotel, itinerary)</li>
+          <li>Include proof of sufficient financial resources and ties to your home country</li>
+          <li>Demonstrate clarity and consistency in your reason for visiting</li>
+        </ul>
+    
+        A well-prepared application that addresses potential concerns directly can lead to a positive outcome.
+      `
+    });
+
+  } else {
+    scoreComments.push({
+      title: "Favorable Destination Choice",
+      text: `
+        You're applying to a destination that generally has a more accessible visa process. This works in your favor, provided your application is complete and truthful.
+    
+        <ul>
+          <li>Don’t let the leniency lead to carelessness — strong documentation is still essential</li>
+          <li>Clearly outline your plans and support them with reliable evidence</li>
+        </ul>
+    
+        With a solid application, your choice of destination increases your likelihood of visa success.
+      `
+    });
+    
   }
 
   // ----------------------------
