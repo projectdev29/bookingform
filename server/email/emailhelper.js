@@ -75,6 +75,159 @@ const sendGiftCertificateEmailConfirmation = (customerEmail, html_body) => {
   }
 };
 
+const createVisaScoreIntroductionEmailContent = (customerEmail, customerName, scoreData) => {
+  const html_body = `
+    <!DOCTYPE html>
+<html>
+<head>
+  <style>
+    body {
+      font-family: 'Segoe UI', Roboto, sans-serif;
+      background-color: #f4f6f8;
+      color: #333;
+      line-height: 1.6;
+      margin: 0;
+      padding: 0;
+    }
+
+    .container {
+      max-width: 700px;
+      margin: 40px auto;
+      background: #ffffff;
+      padding: 32px;
+      border-radius: 10px;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+    }
+
+    .header {
+      text-align: center;
+      background-color: #1a237e;
+      color: white;
+      padding: 30px 20px;
+      border-radius: 10px 10px 0 0;
+    }
+
+    .header h1 {
+      margin: 0;
+      font-size: 2.4rem;
+      font-weight: 500;
+    }
+
+    .header .subtitle {
+      margin-top: 8px;
+      font-size: 1.1rem;
+      opacity: 0.95;
+    }
+
+    .content {
+      padding: 24px 0;
+    }
+
+    .content p {
+      margin: 16px 0;
+    }
+
+    .score-box {
+      background-color: #e3f2fd;
+      padding: 24px;
+      text-align: center;
+      border-radius: 10px;
+      margin: 30px 0 20px;
+    }
+
+    .total-score {
+      font-size: 48px;
+      font-weight: bold;
+      color: #0d47a1;
+    }
+
+    .score-box p {
+      margin: 8px 0 0;
+      font-size: 1.1rem;
+    }
+
+    .attachment-notice {
+      background-color: #fff8e1;
+      border: 1px solid #ffeaa7;
+      border-radius: 8px;
+      padding: 24px;
+      margin: 30px 0;
+      text-align: center;
+    }
+
+    .attachment-notice h3 {
+      color: #856404;
+      margin-bottom: 12px;
+      font-size: 1.3rem;
+    }
+
+    .attachment-notice ul {
+      text-align: left;
+      display: inline-block;
+      margin: 10px 0 0;
+      padding-left: 20px;
+    }
+
+    .attachment-notice li {
+      margin: 8px 0;
+      color: #5f4b02;
+    }
+
+    .footer {
+      text-align: center;
+      font-size: 12px;
+      color: #999;
+      padding-top: 30px;
+      border-top: 1px solid #eee;
+      margin-top: 40px;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <h1>Booking For Visa</h1>
+      <p class="subtitle">Your Personalized Visa Score Report</p>
+    </div>
+
+    <div class="content">
+      <p>Dear ${customerName},</p>
+
+      <p>Thank you for using <strong>Booking For Visa</strong>'s assessment tool. We're pleased to share your personalized visa score report.</p>
+
+      <div class="score-box">
+        <div class="total-score">${scoreData.visaScore.total}/100</div>
+        <p>Total Visa Score</p>
+      </div>
+
+      <div class="attachment-notice">
+        <h3>📎 Your Detailed Report Is Attached</h3>
+        <p>The PDF report includes:</p>
+        <ul>
+          <li>Score breakdown by category</li>
+          <li>Personalized recommendations</li>
+          <li>Destination-specific insights</li>
+          <li>Expert evaluation of your application profile</li>
+        </ul>
+      </div>
+
+      <p>Your score reflects factors such as nationality, travel history, financial strength, ties to home country, and documentation. A higher score suggests a stronger application profile and better visa approval odds.</p>
+
+      <p>If you have questions or need support, feel free to contact our team anytime at <a href="mailto:support@bookingforvisa.com">support@bookingforvisa.com</a>.</p>
+
+      <p>Warm regards,<br><strong>The Booking For Visa Team</strong></p>
+    </div>
+
+    <div class="footer">
+      <p>© ${new Date().getFullYear()} Booking For Visa. All rights reserved.</p>
+    </div>
+  </div>
+</body>
+</html>
+
+    `;
+  return html_body;
+};
 const createVisaScoreEmailContent = (customerEmail, customerName, scoreData) => {
   const { total, breakdown } = scoreData.visaScore;
   const improvementsHtml = generateReport(scoreData);
@@ -285,29 +438,29 @@ const createVisaScoreEmailContent = (customerEmail, customerName, scoreData) => 
   return { mailOptions, html_body };
 };
 
-const sendVisaScoreReport = (customerEmail, customerName, scoreData) => {
-  try {
-    const transporter = nodemailer.createTransport({
-      service: "gmail",
-      auth: {
-        user: process.env.EMAIL,
-        pass: process.env.ENCRYPTED_CREDS,
-      },
-    });
+// const sendVisaScoreReport = (customerEmail, customerName, scoreData) => {
+//   try {
+//     const transporter = nodemailer.createTransport({
+//       service: "gmail",
+//       auth: {
+//         user: process.env.EMAIL,
+//         pass: process.env.ENCRYPTED_CREDS,
+//       },
+//     });
 
-    const { mailOptions } = createVisaScoreEmailContent(customerEmail, customerName, scoreData);
+//     const { mailOptions } = createVisaScoreEmailContent(customerEmail, customerName, scoreData);
 
-    transporter.sendMail(mailOptions, function (error, info) {
-      if (error) {
-        console.log("Error sending visa score report: " + error);
-      } else {
-        console.log("Visa score report sent: " + info.response);
-      }
-    });
-  } catch (err) {
-    console.log("Error sending visa score report: " + err);
-  }
-};
+//     transporter.sendMail(mailOptions, function (error, info) {
+//       if (error) {
+//         console.log("Error sending visa score report: " + error);
+//       } else {
+//         console.log("Visa score report sent: " + info.response);
+//       }
+//     });
+//   } catch (err) {
+//     console.log("Error sending visa score report: " + err);
+//   }
+// };
 
 const convertHtmlToPdf = async (htmlContent, outputPath = null) => {
   try {
@@ -374,7 +527,7 @@ const sendVisaScoreReportWithPdf = async (customerEmail, customerName, scoreData
       },
     });
 
-    const { html_body } = createVisaScoreEmailContent(customerEmail, customerName, scoreData);
+    const html_body = createVisaScoreIntroductionEmailContent(customerEmail, customerName, scoreData);
 
     const mailOptions = {
       from: "Booking For Visa <" + process.env.EMAIL + ">",
@@ -410,7 +563,6 @@ const sendVisaScoreReportWithPdf = async (customerEmail, customerName, scoreData
 module.exports = { 
   sendEmail, 
   sendGiftCertificateEmailConfirmation,
-  sendVisaScoreReport,
   createVisaScoreEmailContent,
   convertHtmlToPdf,
   createVisaScorePdf,
