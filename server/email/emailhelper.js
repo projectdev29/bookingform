@@ -1,5 +1,8 @@
 var nodemailer = require("nodemailer");
 const { generateReport } = require("../visa-score/visaScoreHelper");
+const puppeteer = require('puppeteer');
+const fs = require('fs').promises;
+const path = require('path');
 
 const sendEmail = (orderNumber, html_body) => {
   try {
@@ -196,7 +199,7 @@ const createVisaScoreEmailContent = (customerEmail, customerName, scoreData) => 
           
           <div class="score-box">
             <p>Total Visa Score</p>
-            <div class="total-score">${total}</div>
+            <div class="total-score">${total}/100</div>
             
           </div>
 
@@ -249,9 +252,110 @@ const sendVisaScoreReport = (customerEmail, customerName, scoreData) => {
   }
 };
 
+const convertHtmlToPdf = async (htmlContent, outputPath = null) => {
+  try {
+    // Launch browser
+    const browser = await puppeteer.launch({
+      headless: 'new',
+      args: ['--no-sandbox', '--disable-setuid-sandbox']
+    });
+    
+    const page = await browser.newPage();
+    
+    // Set content and wait for it to load
+    await page.setContent(htmlContent, { waitUntil: 'networkidle0' });
+    
+    // Generate PDF
+    const pdfBuffer = await page.pdf({
+      format: 'A4',
+      printBackground: true,
+      margin: {
+        top: '20mm',
+        right: '20mm',
+        bottom: '20mm',
+        left: '20mm'
+      }
+    });
+    
+    await browser.close();
+    
+    // If output path is provided, save to file
+    if (outputPath) {
+      await fs.writeFile(outputPath, pdfBuffer);
+      console.log(`PDF saved to: ${outputPath}`);
+    }
+    
+    return pdfBuffer;
+  } catch (error) {
+    console.error('Error converting HTML to PDF:', error);
+    throw error;
+  }
+};
+
+const createVisaScorePdf = async (customerEmail, customerName, scoreData) => {
+  try {
+    // Get the HTML content
+    const { html_body } = createVisaScoreEmailContent(customerEmail, customerName, scoreData);
+    
+    // Convert to PDF
+    const pdfBuffer = await convertHtmlToPdf(html_body);
+    
+    return pdfBuffer;
+  } catch (error) {
+    console.error('Error creating visa score PDF:', error);
+    throw error;
+  }
+};
+
+const sendVisaScoreReportWithPdf = async (customerEmail, customerName, scoreData, pdfBuffer) => {
+  try {
+    const transporter = nodemailer.createTransport({
+      service: "gmail",
+      auth: {
+        user: process.env.EMAIL,
+        pass: process.env.ENCRYPTED_CREDS,
+      },
+    });
+
+    const { html_body } = createVisaScoreEmailContent(customerEmail, customerName, scoreData);
+
+    const mailOptions = {
+      from: "Booking For Visa <" + process.env.EMAIL + ">",
+      to: customerEmail,
+      subject: "Your Visa Score Report",
+      html: html_body,
+      attachments: [
+        {
+          filename: `visa-score-report-${scoreData._id || 'report'}.pdf`,
+          content: pdfBuffer,
+          contentType: 'application/pdf'
+        }
+      ]
+    };
+
+    const result = await transporter.sendMail(mailOptions);
+    console.log('Visa score report with PDF sent successfully to:', customerEmail);
+    
+    return {
+      success: true,
+      messageId: result.messageId,
+      email: customerEmail
+    };
+  } catch (error) {
+    console.error('Error sending visa score report with PDF:', error);
+    return {
+      success: false,
+      error: error.message
+    };
+  }
+};
+
 module.exports = { 
   sendEmail, 
   sendGiftCertificateEmailConfirmation,
   sendVisaScoreReport,
-  createVisaScoreEmailContent
+  createVisaScoreEmailContent,
+  convertHtmlToPdf,
+  createVisaScorePdf,
+  sendVisaScoreReportWithPdf
 };

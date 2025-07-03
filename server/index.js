@@ -28,7 +28,8 @@ const {
   deductAmountFromGiftCertificate,
 } = require("./giftcertificate/giftcertificatehelper");
 const { submitVisaScore } = require("./visa-score/visaScoreHelper");
-const { createVisaScoreEmailContent } = require("./email/emailhelper");
+const { createVisaScoreEmailContent, sendVisaScoreReport, createVisaScorePdf } = require("./email/emailhelper");
+const { sendVisaScoreReportWithPdf } = require("./email/emailhelper");
 
 const PORT = process.env.PORT || 3001;
 
@@ -90,11 +91,45 @@ app.post("/api/pay-for-visa-score", async (req, res) => {
       });
     }
 
-    const result = await createPaymentForVisaScore(req.body);
-    console.log('Payment result:', JSON.stringify(result, null, 2));
+    // Get the visa score submission first
+    const submission = await findById(req.body.submissionId, "VisaScores");
+    if (submission.notFound) {
+      return res.status(404).json({
+        success: false,
+        error: "Visa score submission not found"
+      });
+    }
+
+    // Extract email and name from submission
+    const customerEmail = submission.email;
+    const customerName = submission.fullName || `${submission.firstName || ''} ${submission.lastName || ''}`.trim();
     
-    // If payment is successful, mark the submission as paid
-    if (result.payment && result.payment.status === 'COMPLETED') {
+    if (!customerEmail) {
+      return res.status(400).json({
+        success: false,
+        error: "Customer email not found in submission"
+      });
+    }
+
+    // Step 1: Generate PDF first
+    let pdfResult = { success: false, error: null };
+    try {
+      console.log('Generating PDF for visa score submission:', req.body.submissionId);
+      const pdfBuffer = await createVisaScorePdf(customerEmail, customerName, submission);
+      pdfResult = { success: true, buffer: pdfBuffer };
+      console.log('PDF generated successfully');
+    } catch (pdfError) {
+      console.error('PDF generation failed:', pdfError);
+      pdfResult = { success: false, error: pdfError.message };
+    }
+
+    // Step 2: Process payment
+    const paymentResult = await createPaymentForVisaScore(req.body);
+    console.log('Payment result:', JSON.stringify(paymentResult, null, 2));
+    
+    // Step 3: If payment is successful, mark the submission as paid and send email
+    let emailResult = { success: false, error: null };
+    if (paymentResult.payment && paymentResult.payment.status === 'COMPLETED') {
       try {
         const updateResult = await updatePaymentStatus(
           req.body.submissionId, 
@@ -104,6 +139,28 @@ app.post("/api/pay-for-visa-score", async (req, res) => {
         
         if (updateResult.succeeded) {
           console.log('Successfully marked visa score submission as paid:', req.body.submissionId);
+          
+          // Send email with PDF if PDF generation was successful
+          if (pdfResult.success) {
+            try {
+              console.log('Sending email with PDF attachment');
+              emailResult = await sendVisaScoreReportWithPdf(customerEmail, customerName, submission, pdfResult.buffer);
+              console.log('Email sent successfully');
+            } catch (emailError) {
+              console.error('Email sending failed:', emailError);
+              emailResult = { success: false, error: emailError.message };
+            }
+          } else {
+            // Send regular email without PDF if PDF generation failed
+            try {
+              console.log('Sending regular email (PDF generation failed)');
+              emailResult = await sendVisaScoreReport(customerEmail, customerName, submission);
+              console.log('Regular email sent successfully');
+            } catch (emailError) {
+              console.error('Regular email sending failed:', emailError);
+              emailResult = { success: false, error: emailError.message };
+            }
+          }
         } else {
           console.error('Failed to mark submission as paid:', updateResult.error);
         }
@@ -112,7 +169,23 @@ app.post("/api/pay-for-visa-score", async (req, res) => {
       }
     }
     
-    res.status(200).json(result);
+    // Step 4: Return comprehensive response
+    const response = {
+      success: paymentResult.payment && paymentResult.payment.status === 'COMPLETED',
+      payment: paymentResult,
+      pdf: {
+        generated: pdfResult.success,
+        error: pdfResult.error
+      },
+      email: {
+        sent: emailResult.success,
+        error: emailResult.error,
+        address: customerEmail
+      },
+      submissionId: req.body.submissionId
+    };
+
+    res.status(200).json(response);
   } catch (error) {
     console.error('Error in pay-for-visa-score endpoint:', error);
     console.error('Error stack:', error.stack);
@@ -214,69 +287,6 @@ app.post("/api/submit-visa-score", async (req, res) => {
   }
 });
 
-// Get visa score email content endpoint
-app.get("/api/visa-score-email-content", async (req, res) => {
-  try {
-    const { submissionId, customerName } = req.query;
-    
-    if (!submissionId) {
-      return res.status(400).json({ 
-        error: 'Bad Request', 
-        message: 'submissionId is required' 
-      });
-    }
-
-    // Get the visa score submission from database
-    const submission = await findById(submissionId, "VisaScores");
-    if (submission.notFound) {
-      return res.status(404).json({ 
-        error: 'Not Found', 
-        message: 'Visa score submission not found' 
-      });
-    }
-
-    // Check if the submission is paid
-    if (!submission.isPaid) {
-      return res.status(402).json({ 
-        error: 'Payment Required', 
-        message: 'This visa score report requires payment before the full content can be accessed' 
-      });
-    }
-
-    // Extract customer email and name
-    const customerEmail = submission.email;
-    const name = customerName || submission.fullName || 'Valued Customer';
-
-    // Get the full visa score data (not just freemium)
-    const scoreData = submission.visaScore;
-    
-    if (!scoreData) {
-      return res.status(400).json({ 
-        error: 'Bad Request', 
-        message: 'No visa score data found in submission' 
-      });
-    }
-
-    // Generate email content
-    const emailContent = createVisaScoreEmailContent(customerEmail, name, submission);
-    
-    res.status(200).json({
-      success: true,
-      emailContent: {
-        html: emailContent.html_body,        
-      },
-      submissionId: submissionId
-    });
-    
-  } catch (error) {
-    console.error('Error generating visa score email content:', error);
-    res.status(500).json({ 
-      error: 'Internal server error', 
-      message: error.message || 'An unexpected error occurred',
-      timestamp: new Date().toISOString()
-    });
-  }
-});
 
 app.get("*", (req, res) => {
   res.sendFile(path.resolve(__dirname, "../client/build", "index.html"));
