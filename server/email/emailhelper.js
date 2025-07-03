@@ -108,6 +108,58 @@ const createVisaScoreEmailContent = (customerEmail, customerName, scoreData) => 
     border-radius: 10px 10px 0 0;
   }
 
+  .header h1 {
+    margin: 0;
+    font-size: 2.2rem;
+    font-weight: 300;
+  }
+
+  .header .subtitle {
+    margin: 8px 0 0 0;
+    font-size: 1.1rem;
+    opacity: 0.9;
+  }
+
+  .report-header {
+    background-color: #f8f9fa;
+    border: 1px solid #e9ecef;
+    border-radius: 8px;
+    padding: 20px;
+    margin: 20px 0;
+  }
+
+  .report-header h2 {
+    color: #1a237e;
+    margin: 0 0 15px 0;
+    font-size: 1.4rem;
+    border-bottom: 2px solid #1a237e;
+    padding-bottom: 8px;
+  }
+
+  .report-info {
+    display: flex;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 15px;
+  }
+
+  .info-group {
+    flex: 1;
+    min-width: 200px;
+  }
+
+  .info-label {
+    font-weight: 600;
+    color: #495057;
+    font-size: 0.9rem;
+    margin-bottom: 4px;
+  }
+
+  .info-value {
+    color: #212529;
+    font-size: 1rem;
+  }
+
   .content {
     padding: 24px;
   }
@@ -192,6 +244,11 @@ const createVisaScoreEmailContent = (customerEmail, customerName, scoreData) => 
     </head>
     <body>
       <div class="container">
+        <div class="header">
+          <h1>Booking For Visa</h1>
+          <p class="subtitle">Visa Score Assessment Report</p>
+        </div>
+        
         
         <div class="content">
           <p>Dear ${customerName},</p>
