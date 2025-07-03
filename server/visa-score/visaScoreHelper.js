@@ -628,36 +628,108 @@ const generateReport = (scoreData) => {
 
   const getComment = (score, category) => {
     const bands = {
+      nationality: [
+        [
+          15, 15,
+          "You hold a passport from a Tier 1 country, which is highly trusted by visa authorities. This significantly strengthens your application and reduces perceived risk."
+        ],
+        [
+          10, 10,
+          "You are from a Tier 2 country. While not among the highest-trust nationalities, it is generally well-regarded and poses a moderate risk profile to visa officers."
+        ],
+        [
+          5, 5,
+          "You are from a Tier 3 country. Applications from these nationalities may face closer scrutiny, so it's important to ensure that other aspects of your application are especially strong."
+        ]
+      ],
       travel: [
-        [15, 20, "You have an excellent travel history, which strongly supports your application. Visits to stable, visa-friendly countries are a big plus."],
-        [10, 14, "Your travel history is decent. Adding more travel to countries with strong visa reputations can further improve your profile."],
-        [0, 9, "Your travel history is limited. This may raise concerns about your global mobility experience."]
+        [
+          15, 20,
+          "You have a strong travel history, especially to countries with strict visa policies. This demonstrates good travel compliance and enhances trust in your application."
+        ],
+        [
+          10, 14,
+          "You have a fair travel record. Visiting countries with strong visa reputations in the future can further strengthen your profile."
+        ],
+        [
+          0, 9,
+          "Your travel history is limited, which may raise concerns about your experience with international travel. Consider building this over time with shorter trips."
+        ]
       ],
+      
       financial: [
-        [20, 25, "You appear financially strong and well-prepared to support your trip."],
-        [15, 19, "Your finances are adequate but could be improved to enhance confidence in your ability to fund your travel."],
-        [0, 14, "Your financial documentation may be insufficient. Visa officers could question your ability to afford your trip."]
-      ],
+        [
+          20, 25,
+          "Your financial profile appears strong, indicating sufficient funds to support your travel and return. This reduces financial risk in the eyes of the visa officer."
+        ],
+        [
+          15, 19,
+          "You demonstrate reasonable financial readiness. Increasing savings or showcasing more supporting documents could further boost confidence."
+        ],
+        [
+          0, 14,
+          "Your current financial information may raise concerns about your ability to fund your trip. Consider providing clearer or stronger financial proof."
+        ]
+      ],      
       ties: [
-        [12, 15, "You have demonstrated strong ties to your home country, reducing perceived overstay risk."],
-        [8, 11, "Your home ties are moderate. Additional proof of obligations at home can boost your case."],
-        [0, 7, "Limited ties to home country could make your application riskier in the eyes of the visa officer."]
+        [
+          12, 15,
+          "You have established strong ties to your home country, which helps assure the visa officer of your intent to return after your visit."
+        ],
+        [
+          8, 11,
+          "Your ties are moderately convincing. Consider providing more evidence of obligations or long-term connections at home."
+        ],
+        [
+          0, 7,
+          "Limited ties to your home country could raise overstay concerns. Strengthening this area is recommended."
+        ]
       ],
       documents: [
-        [12, 15, "Your documents appear complete and well-organized."],
-        [8, 11, "Some key documents are in place, but consider adding more proof to improve clarity."],
-        [0, 7, "Your documentation is lacking or incomplete. Strengthen this area with a full set of supporting files."]
+        [
+          12, 15,
+          "Your documentation is well-prepared and appears complete. This contributes positively to your application's credibility."
+        ],
+        [
+          8, 11,
+          "You have submitted most of the required documents. Consider including additional evidence to add clarity and completeness."
+        ],
+        [
+          0, 7,
+          "Missing or unclear documents may weaken your case. Aim to provide a comprehensive and well-organized set of materials."
+        ]
       ],
+      
       risk: [
-        [8, 10, "No major red flags detected in your profile."],
-        [5, 7, "There are some moderate concerns in your profile. Mitigating them with strong evidence is advised."],
-        [0, 4, "Multiple risk factors may affect your application's success."]
+        [
+          8, 10,
+          "No major risk indicators are present in your profile. This supports a favorable assessment by visa authorities."
+        ],
+        [
+          5, 7,
+          "Some moderate concerns exist, such as gaps in documentation or profile inconsistencies. Addressing these proactively is advisable."
+        ],
+        [
+          -10, 4,
+          "Multiple red flags may reduce your application's chances. Strengthening all possible areas and providing strong evidence is critical."
+        ]
       ],
+      
       visitingCountry: [
-        [-10, -7, "The country you are visiting has very strict visa requirements. Make sure all aspects of your application are very strong."],
-        [-6, -3, "You are applying for a visa to a moderately difficult country. Pay close attention to documentation."],
-        [-2, 0, "The destination country's visa requirements are relatively lenient. Still, ensure your application is thorough."]
+        [
+          -10, -7,
+          "Your chosen destination has strict visa requirements. Ensure every part of your application is exceptionally strong and well-documented."
+        ],
+        [
+          -6, -3,
+          "You are applying to a country with moderate visa difficulty. Careful attention to detail and thorough documentation are still important."
+        ],
+        [
+          -2, 0,
+          "The destination is generally lenient in visa approvals. However, a complete and accurate application remains essential."
+        ]
       ]
+      
     };
 
     for (const [min, max, msg] of bands[category]) {
@@ -676,6 +748,7 @@ const generateReport = (scoreData) => {
     <h2>How You Scored</h2>`;
   
   const categoryMaxPoints = {
+    nationality: 15,
     travel: 20,
     financial: 25,
     ties: 15,
@@ -684,10 +757,11 @@ const generateReport = (scoreData) => {
     visitingCountry: 0 // This can be negative, so we'll handle it specially
   };
   
-  ['travel', 'financial', 'ties', 'documents', 'risk', 'visitingCountry'].forEach((category) => {
+  ['nationality', 'travel', 'financial', 'ties', 'documents', 'risk', 'visitingCountry'].forEach((category) => {
     const score = breakdown[category];
     const maxPoints = categoryMaxPoints[category];
     const label = {
+      nationality: "Nationality",
       travel: "Travel History",
       financial: "Financial Strength",
       ties: "Ties to Home Country",
