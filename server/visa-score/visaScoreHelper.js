@@ -464,9 +464,9 @@ function renderDestinationAdvice(destination) {
     "Schengen": {
       riskLevel: "high",
       rejectionCauses: [
-        "fake or unverifiable hotel/flight bookings",
-        "insufficient bank balance",
-        "unclear itinerary or travel purpose"
+        "Fake or unverifiable hotel/flight bookings",
+        "Insufficient bank balance",
+        "Unclear itinerary or travel purpose"
       ],
       tips: [
         "Book travel insurance with at least €30,000 coverage.",
@@ -477,9 +477,9 @@ function renderDestinationAdvice(destination) {
     "United States": {
       riskLevel: "very_high",
       rejectionCauses: [
-        "weak home country ties",
-        "vague or suspicious trip purpose",
-        "inconsistencies in previous applications or interviews"
+        "Weak home country ties",
+        "Vague or suspicious trip purpose",
+        "Inconsistencies in previous applications or interviews"
       ],
       tips: [
         "Clearly explain your visit in the DS-160 form.",
@@ -490,9 +490,9 @@ function renderDestinationAdvice(destination) {
     "United Kingdom": {
       riskLevel: "high",
       rejectionCauses: [
-        "insufficient proof of income or funds",
-        "unclear travel itinerary",
-        "lack of home country obligations"
+        "Insufficient proof of income or funds",
+        "Unclear travel itinerary",
+        "Lack of home country obligations"
       ],
       tips: [
         "Provide recent bank statements showing funds well above your expected expenses.",
@@ -504,9 +504,9 @@ function renderDestinationAdvice(destination) {
     "Canada": {
       riskLevel: "high",
       rejectionCauses: [
-        "insufficient funds (especially for study)",
-        "weak home ties",
-        "vague or inconsistent study or work plans"
+        "Insufficient funds (especially for study)",
+        "Weak home ties",
+        "Vague or inconsistent study or work plans"
       ],
       tips: [
         "For student visas, provide proof of tuition payment and GIC.",
@@ -518,9 +518,9 @@ function renderDestinationAdvice(destination) {
     "Australia": {
       riskLevel: "high",
       rejectionCauses: [
-        "low financial capability",
-        "unverifiable documents",
-        "no compelling reason to return"
+        "Low financial capability",
+        "Unverifiable documents",
+        "No compelling reason to return"
       ],
       tips: [
         "Submit evidence of strong income, savings, or financial sponsorship.",
@@ -532,9 +532,9 @@ function renderDestinationAdvice(destination) {
     "Japan": {
       riskLevel: "medium",
       rejectionCauses: [
-        "insufficient itinerary details",
-        "missing financial proof",
-        "unverified bookings"
+        "Insufficient itinerary details",
+        "Missing financial proof",
+        "Unverified bookings"
       ], 
       tips: [
         "Your itinerary should include exact travel dates and locations.",
@@ -546,9 +546,9 @@ function renderDestinationAdvice(destination) {
     "South Korea": {
       riskLevel: "medium",
       rejectionCauses: [
-        "unclear travel purpose",
-        "incomplete bank documentation",
-        "lack of home country ties"
+        "Unclear travel purpose",
+        "Incomplete bank documentation",
+        "Lack of home country ties"
       ], 
       tips: [
         "Submit a full itinerary, even if short.",
@@ -560,9 +560,9 @@ function renderDestinationAdvice(destination) {
     "United Arab Emirates": {
       riskLevel: "medium",
       rejectionCauses: [
-        "fake hotel bookings",
-        "unclear purpose",
-        "prior overstays"
+        "Fake hotel bookings",
+        "Unclear purpose",
+        "Prior overstays"
       ], 
       tips: [
         "Use an agent or official website for visa issuance if required.",
@@ -574,9 +574,9 @@ function renderDestinationAdvice(destination) {
     "Saudi Arabia": {
       riskLevel: "medium",
       rejectionCauses: [
-        "lack of travel history",
-        "religious or family status ambiguity",
-        "unclear travel intent"
+        "Lack of travel history",
+        "Religious or family status ambiguity",
+        "Unclear travel intent"
       ], 
       tips: [
         "Apply through the official portal and upload all supporting documents.",
@@ -588,9 +588,9 @@ function renderDestinationAdvice(destination) {
     "Turkey": {
       riskLevel: "medium",
       rejectionCauses: [
-        "low financial capability",
-        "unrealistic travel plan",
-        "prior visa denials"
+        "Low financial capability",
+        "Unrealistic travel plan",
+        "Prior visa denials"
       ], 
       tips: [
         "Provide proof of hotel bookings and return flights.",
