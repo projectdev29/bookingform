@@ -202,18 +202,13 @@ const createVisaScoreIntroductionEmailContent = (customerEmail, customerName, sc
 
       <div class="attachment-notice">
         <h3>📎 Your Detailed Report Is Attached</h3>
-        <p>The PDF report includes:</p>
-        <ul>
-          <li>Score breakdown by category</li>
-          <li>Personalized recommendations</li>
-          <li>Destination-specific insights</li>
-          <li>Expert evaluation of your application profile</li>
-        </ul>
+        <p>The PDF report includes your score breakdown by category, personalized recommendations and destination-specific insights.</p>
+        
       </div>
 
       <p>Your score reflects factors such as nationality, travel history, financial strength, ties to home country, and documentation. A higher score suggests a stronger application profile and better visa approval odds.</p>
 
-      <p>If you have questions or need support, feel free to contact our team anytime at <a href="mailto:support@bookingforvisa.com">support@bookingforvisa.com</a>.</p>
+      <p>If you have questions or need support, feel free to contact our team anytime at <a href="mailto:admin@bookingforvisa.com">admin@bookingforvisa.com</a>.</p>
 
       <p>Warm regards,<br><strong>The Booking For Visa Team</strong></p>
     </div>
@@ -228,6 +223,60 @@ const createVisaScoreIntroductionEmailContent = (customerEmail, customerName, sc
     `;
   return html_body;
 };
+const generateOverallAssessment = (totalScore) => {
+  let assessment = '';
+  let color = '';
+  
+  if (totalScore >= 80) {
+    assessment = `
+      <div class="assessment excellent">
+      <h3>Excellent Visa Profile</h3>
+      <p>Your overall visa application profile is very strong, with a score of ${totalScore}/100. This suggests high readiness and low perceived risk.</p>
+      <p>With this score, your application is likely to be viewed favorably by visa authorities, assuming supporting documents are accurate and complete.</p>
+    </div>
+    `;
+    color = '#2e7d32';
+  } else if (totalScore >= 65) {
+    assessment = `
+      <div class="assessment good">
+      <h3>Strong Visa Profile</h3>
+      <p>Your application score of ${totalScore}/100 indicates that you meet most expectations for a successful visa application.</p>
+      <p>Ensure your documentation is well-organized and that your application presents a clear and consistent story.</p>
+    </div>
+    `;
+    color = '#1976d2';
+  } else if (totalScore >= 50) {
+    assessment = `
+      <div class="assessment moderate">
+      <h3>Moderate Visa Profile</h3>
+      <p>Your score of ${totalScore}/100 shows that your application has potential but may require improvements in some areas.</p>
+      <p>Carefully review and strengthen your application before submission to boost your chances.</p>
+    </div>
+    `;
+    color = '#f57c00';
+  } else if (totalScore >= 35) {
+    assessment = `
+      <div class="assessment weak">
+      <h3>Weak Visa Profile</h3>
+      <p>Your current score of ${totalScore}/100 suggests your application may face challenges during review.</p>
+      <p>Significant improvements are recommended to reduce the risk of rejection.</p>
+    </div>
+    `;
+    color = '#d32f2f';
+  } else {
+    assessment = `
+      <div class="assessment poor">
+      <h3>Poor Visa Profile</h3>
+      <p>Your score of ${totalScore}/100 indicates that your visa application is at high risk of rejection without substantial changes.</p>
+      <p>We strongly recommend reviewing the detailed suggestions below and addressing all areas of concern before applying.</p>
+    </div>
+    `;
+    color = '#c62828';
+  }
+  
+  return assessment;
+};
+
 const createVisaScoreEmailContent = (customerEmail, customerName, scoreData) => {
   const { total, breakdown } = scoreData.visaScore;
   const improvementsHtml = generateReport(scoreData);
@@ -385,6 +434,55 @@ const createVisaScoreEmailContent = (customerEmail, customerName, scoreData) => 
   color: #444;
 }
 
+.assessment {
+  background: #f8f9fa;
+  border-left: 4px solid;
+  padding: 20px;
+  margin: 20px 0;
+  border-radius: 4px;
+}
+
+.assessment.excellent {
+  border-left-color: #2e7d32;
+  background: #f1f8e9;
+}
+
+.assessment.good {
+  border-left-color: #1976d2;
+  background: #e3f2fd;
+}
+
+.assessment.moderate {
+  border-left-color: #f57c00;
+  background: #fff3e0;
+}
+
+.assessment.weak {
+  border-left-color: #d32f2f;
+  background: #ffebee;
+}
+
+.assessment.poor {
+  border-left-color: #c62828;
+  background: #ffebee;
+}
+
+.assessment h3 {
+  margin-top: 0;
+  margin-bottom: 15px;
+  font-size: 1.2rem;
+  font-weight: 600;
+}
+
+.assessment p {
+  margin-bottom: 12px;
+  line-height: 1.5;
+}
+
+.assessment strong {
+  color: #333;
+}
+
 
   .footer {
     text-align: center;
@@ -413,7 +511,7 @@ const createVisaScoreEmailContent = (customerEmail, customerName, scoreData) => 
             
           </div>
 
-          <p>The score is based on various factors including your nationality, travel history, financial situation, and documentation. A higher score indicates a stronger visa application profile.</p>
+          ${generateOverallAssessment(total)}
           
           ${improvementsHtml}
 
