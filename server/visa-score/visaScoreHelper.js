@@ -588,6 +588,106 @@ function renderDestinationAdvice(destination) {
 
   return html;
 }
+const generateRiskFeedback = (scoreData) => {
+  const age = parseInt(scoreData.age, 10);
+  const isTier4or5Country = nationalityScores[scoreData.nationality] <= 5;
+  const isHighRiskDemo = scoreData.gender === 'male' && age < 30 && isTier4or5Country;
+  const feedbackPoints = [];
+
+  // 🎓 Student Risk
+  if (scoreData.visitPurpose === 'study') {
+    const incompleteFunding =
+      scoreData.hasTuitionCovered !== 'yes' ||
+      scoreData.hasSponsorIncome !== 'yes' ||
+      (scoreData.hasScholarship !== 'yes' && scoreData.hasEducationFunds !== 'yes');
+
+    if (incompleteFunding) {
+      feedbackPoints.push(
+        `<li>Your student profile may appear underfunded or dependent, which could raise concerns about long-term plans or sponsorship reliability.</li>`
+      );
+    }
+  }
+
+  // 👦 High-Risk Demographic: Young, Single Males from Tier 4/5
+  if (isHighRiskDemo && (!scoreData.hasAssets || scoreData.occupation !== 'employed')) {
+    feedbackPoints.push(
+      `<li>Visa officers may scrutinize profiles like yours — young, single males from higher-risk countries — especially when income or asset ownership is unclear.</li>`
+    );
+  }
+
+  // 👴 Retired or Older Applicant
+  if (age > 55) {
+    if (scoreData.hasAssets !== 'yes' || scoreData.monthlyIncome !== 'high') {
+      feedbackPoints.push(
+        `<li>Older applicants without visible income or assets may face additional questions around trip funding or return assurance.</li>`
+      );
+    }
+  }
+
+  // 👶 Under 24 with Weak Ties
+  if (age >= 18 && age <= 24) {
+    if (scoreData.hasImmediateFamily !== 'yes' || scoreData.hasLongTermCommitments !== 'yes') {
+      feedbackPoints.push(
+        `<li>Young applicants without strong family or institutional ties at home may be seen as potential overstay risks.</li>`
+      );
+    }
+  }
+
+  // 🧳 Missing Documents or Intent Proof
+  if ((scoreData.documents || []).length < 4) {
+    feedbackPoints.push(
+      `<li>Submitting fewer documents may weaken your ability to demonstrate clear intent and purpose for travel.</li>`
+    );
+  }
+
+  // ❌ Visa Rejection History
+  if (scoreData.hasVisaDenialHistory === 'yes') {
+    feedbackPoints.push(
+      `<li>Previous visa refusals can negatively impact your profile unless you show substantial changes or improvements since.</li>`
+    );
+  }
+
+  // 🏨 Missing Travel Plans
+  if (scoreData.hasConfirmedAccommodation === 'no') {
+    feedbackPoints.push(
+      `<li>Lack of confirmed accommodation may give the impression of an unplanned or vague itinerary.</li>`
+    );
+  }
+
+  if (scoreData.hasTravelItinerary === 'no') {
+    feedbackPoints.push(
+      `<li>A missing itinerary could weaken your case by suggesting uncertainty or insufficient planning.</li>`
+    );
+  }
+
+  // ✅ Final Output
+  if (feedbackPoints.length === 0) {
+    return {
+      title: "Low-Risk Applicant Profile",
+      text: `
+        Your profile shows no obvious risk factors. From an applicant perspective, your documentation, purpose, and personal background are likely to support a positive visa outcome.
+
+        <ul>
+          <li>Maintain document consistency and transparency</li>
+          <li>Continue demonstrating strong ties and intent</li>
+        </ul>
+      `
+    };
+  } else {
+    return {
+      title: "Address Risk Factors in Your Profile",        
+      text: `
+        Based on your profile, we've identified the following potential concerns visa officers might evaluate closely:
+
+        <ul>
+          ${feedbackPoints.join('\n')}
+        </ul>
+
+        <p>We recommend proactively addressing these issues in your documentation and cover letter to strengthen your credibility and intent.</p>
+      `
+    };
+  }
+};
 
 const getSuggestions = (scoreData) => {
   const suggestions = {};
@@ -836,62 +936,64 @@ const getSuggestions = (scoreData) => {
   }
 
   // Risk Factors (Max 10)
-  if (breakdown.risk < 5) {
-    suggestions.risk = {
-      title: "Address Serious Risk Factors in Your Profile",
-      text: `
-        Your profile contains several risk indicators that could negatively impact your visa application. These risks may include factors such as:
-        <ul>
-          <li>Lack of travel history or previous visa rejections</li>
-          <li>Young, single applicants without stable income or assets</li>
-          <li>Overstays or immigration violations in the past</li>
-        </ul>
+  suggestions.risk = generateRiskFeedback(scoreData);
+
+  // if (breakdown.risk < 5) {
+  //   suggestions.risk = {
+  //     title: "Address Serious Risk Factors in Your Profile",
+  //     text: `
+  //       Your profile contains several risk indicators that could negatively impact your visa application. These risks may include factors such as:
+  //       <ul>
+  //         <li>Lack of travel history or previous visa rejections</li>
+  //         <li>Young, single applicants without stable income or assets</li>
+  //         <li>Overstays or immigration violations in the past</li>
+  //       </ul>
     
-        <p>To improve your chances:</p>
-        <ul>
-          <li>Ensure your documentation is complete, truthful, and verifiable</li>
-          <li>Strengthen ties to your home country through job letters, property ownership, or family obligations</li>
-          <li>Demonstrate clear intent to return with a compelling cover letter</li>
-          <li>If possible, show progress since any previous visa refusal (e.g., stronger finances, more travel)</li>
-        </ul>
+  //       <p>To improve your chances:</p>
+  //       <ul>
+  //         <li>Ensure your documentation is complete, truthful, and verifiable</li>
+  //         <li>Strengthen ties to your home country through job letters, property ownership, or family obligations</li>
+  //         <li>Demonstrate clear intent to return with a compelling cover letter</li>
+  //         <li>If possible, show progress since any previous visa refusal (e.g., stronger finances, more travel)</li>
+  //       </ul>
     
-        <p>While risk cannot be fully eliminated, reinforcing other areas of your profile can help offset it.</p>
-      `
-    };
+  //       <p>While risk cannot be fully eliminated, reinforcing other areas of your profile can help offset it.</p>
+  //     `
+  //   };
     
-  } else if (breakdown.risk < 8) {
-    suggestions.risk = {
-      title: "Mitigate Moderate Risk Indicators",
-      text: `
-        Your profile shows some risk factors that could raise questions during the visa evaluation process. These may include a short travel history, limited financial history, or unclear intent.
+  // } else if (breakdown.risk < 8) {
+  //   suggestions.risk = {
+  //     title: "Mitigate Moderate Risk Indicators",
+  //     text: `
+  //       Your profile shows some risk factors that could raise questions during the visa evaluation process. These may include a short travel history, limited financial history, or unclear intent.
     
-        <p>To strengthen your application:</p>
-        <ul>
-          <li>Double-check all documentation for consistency and completeness</li>
-          <li>Include strong supporting documents for employment, family, or property</li>
-          <li>Use your cover letter to proactively address any unusual circumstances (e.g., gaps in employment, previous visa refusals)</li>
-        </ul>
+  //       <p>To strengthen your application:</p>
+  //       <ul>
+  //         <li>Double-check all documentation for consistency and completeness</li>
+  //         <li>Include strong supporting documents for employment, family, or property</li>
+  //         <li>Use your cover letter to proactively address any unusual circumstances (e.g., gaps in employment, previous visa refusals)</li>
+  //       </ul>
     
-        <p>Visa officers are trained to look for red flags — a proactive and transparent approach can improve your credibility.</p>
-      `
-    };
+  //       <p>Visa officers are trained to look for red flags — a proactive and transparent approach can improve your credibility.</p>
+  //     `
+  //   };
     
-  } else {
-    suggestions.risk = {
-      title: "Low-Risk Applicant Profile",
-      text: `
-        Your profile appears stable and low-risk from a visa officer's perspective. There are no major red flags that stand out, which is a positive sign for your application.
+  // } else {
+  //   suggestions.risk = {
+  //     title: "Low-Risk Applicant Profile",
+  //     text: `
+  //       Your profile appears stable and low-risk from a visa officer's perspective. There are no major red flags that stand out, which is a positive sign for your application.
     
-        <ul>
-          <li>Continue to maintain consistency across your documentation</li>
-          <li>Avoid last-minute changes to your itinerary or supporting documents</li>
-        </ul>
+  //       <ul>
+  //         <li>Continue to maintain consistency across your documentation</li>
+  //         <li>Avoid last-minute changes to your itinerary or supporting documents</li>
+  //       </ul>
     
-        A low-risk profile, combined with strong financials and ties to home, gives your application a solid foundation.
-      `
-    };
+  //       A low-risk profile, combined with strong financials and ties to home, gives your application a solid foundation.
+  //     `
+  //   };
      
-  }
+  // }
 
   // Visiting Country Difficulty
   if (breakdown.visitingCountry < -6) {
@@ -972,88 +1074,91 @@ const generateReport = (scoreData) => {
       travel: [
         [
           15, 20,
-          "You have a strong travel history, especially to countries with strict visa policies. This demonstrates good travel compliance and enhances trust in your application."
+          "Your travel history is strong, particularly to countries with strict visa policies. This demonstrates compliance and builds trust in your application."
         ],
         [
           10, 14,
-          "You have a fair travel record. Visiting countries with strong visa reputations in the future can further strengthen your profile."
+          "You have a reasonable travel record. Expanding it with visits to countries that maintain high visa standards can enhance your credibility."
         ],
         [
           0, 9,
-          "Your travel history is limited, which may raise concerns about your experience with international travel. Consider building this over time with shorter trips."
+          "Your travel history is currently limited. Building this gradually—starting with short or regional trips—can strengthen your future applications."
         ]
       ],
       
       financial: [
         [
           20, 25,
-          "Your financial profile appears strong, indicating sufficient funds to support your travel and return. This reduces financial risk in the eyes of the visa officer."
+          "You show a strong financial profile, suggesting you can comfortably support your trip. This significantly reduces perceived financial risk."
         ],
         [
           15, 19,
-          "You demonstrate reasonable financial readiness. Increasing savings or showcasing more supporting documents could further boost confidence."
+          "Your financial position appears stable. Adding further documentation or demonstrating more savings could reinforce your application."
         ],
         [
           0, 14,
-          "Your current financial information may raise concerns about your ability to fund your trip. Consider providing clearer or stronger financial proof."
+          "Your financial information may raise questions about your ability to fund the trip. Providing clearer or more robust proof is advisable."
         ]
-      ],      
+      ],
+      
       ties: [
         [
           12, 15,
-          "You have established strong ties to your home country, which helps assure the visa officer of your intent to return after your visit."
+          "You have presented strong home ties, which helps assure the visa officer of your intent to return after your visit."
         ],
         [
           8, 11,
-          "Your ties are moderately convincing. Consider providing more evidence of obligations or long-term connections at home."
+          "Your ties appear moderate. Supplementing with more evidence of employment, property, or family obligations could strengthen your case."
         ],
         [
           0, 7,
-          "Limited ties to your home country could raise overstay concerns. Strengthening this area is recommended."
+          "Your connection to your home country may seem limited. Reinforcing this area can help reduce perceived overstay risk."
         ]
       ],
+      
       documents: [
         [
           12, 15,
-          "Your documentation is well-prepared and appears complete. This contributes positively to your application's credibility."
+          "Your documentation appears complete and professionally organized, which strengthens the overall impression of your application."
         ],
         [
           8, 11,
-          "You have submitted most of the required documents. Consider including additional evidence to add clarity and completeness."
+          "Most essential documents are in place. Including a few more supporting materials could enhance clarity and completeness."
         ],
         [
           0, 7,
-          "Missing or unclear documents may weaken your case. Aim to provide a comprehensive and well-organized set of materials."
+          "Document gaps or unclear submissions may raise concerns. A thorough and logically structured set of documents is recommended."
         ]
       ],
       
       risk: [
         [
           8, 10,
-          "No major risk indicators are present in your profile. This supports a favorable assessment by visa authorities."
+          "Your profile shows strong reliability with no significant risk indicators. This enhances your credibility and supports a positive visa evaluation."
         ],
         [
           5, 7,
-          "Some moderate concerns exist, such as gaps in documentation or profile inconsistencies. Addressing these proactively is advisable."
+          "Your profile includes a few moderate concerns that may require additional review. These could relate to demographic or situational factors often flagged by visa officers."
         ],
         [
           -10, 4,
-          "Multiple red flags may reduce your application's chances. Strengthening all possible areas and providing strong evidence is critical."
+          "Several high-risk traits are present in your profile. These may affect how favorably your application is perceived and often trigger closer scrutiny by visa authorities."
         ]
       ],
+      
       
       visitingCountry: [
         [
           -10, -7,
-          "Your chosen destination has strict visa requirements. Ensure every part of your application is exceptionally strong and well-documented."
+          "You are applying to a country known for strict visa policies. Applications are closely scrutinized, so ensuring every aspect of your profile is well-documented and credible is essential."
         ],
         [
           -6, -3,
-          "You are applying to a country with moderate visa difficulty. Careful attention to detail and thorough documentation are still important."
+          "Your destination has moderately strict visa requirements. While approvals are achievable, careful preparation and clarity across all documents remain important."
         ],
         [
           -2, 0,
-          "The destination is generally lenient in visa approvals. However, a complete and accurate application remains essential."
+          "The country you’re applying to generally maintains lenient visa procedures. However, a complete, honest, and well-structured application remains key to success."
         ]
       ]
       
@@ -1100,7 +1205,7 @@ const generateReport = (scoreData) => {
     // Special handling for visitingCountry since it can be negative
     let pointsDisplay;
     if (category === 'visitingCountry') {
-      pointsDisplay = `${score} points (deduction)`;
+      pointsDisplay = `${score} points deduction`;
     } else {
       pointsDisplay = `${score}/${maxPoints} points`;
     }
