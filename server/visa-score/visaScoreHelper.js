@@ -325,97 +325,65 @@ const countryTiers = {
     // 6. Risk Factors (Max 10 Points)
     const riskScore = (() => {
       let score = 0;
-      
-      // Age and Gender Risk Assessment
-      const age = parseInt(data.age);
+
+      const age = parseInt(data.age, 10);
       const isTier4or5Country = nationalityScores[data.nationality] <= 5;
-      
-      // Student-specific scoring
+      const isHighRiskDemo = data.gender === 'male' && age < 30 && isTier4or5Country;
+
+      // --- 🎓 Student Risk Assessment ---
       if (data.visitPurpose === 'study') {
-        // Strong student profile with all financial requirements
-        if (data.hasTuitionCovered === 'yes' && 
-            data.hasSponsorIncome === 'yes' && 
-            data.hasEducationFunds === 'yes' && 
-            data.hasScholarship === 'yes') {
-          score += 10;
-        }
-        // Good student profile with most requirements
-        else if (data.hasTuitionCovered === 'yes' && 
-                 data.hasSponsorIncome === 'yes' && 
-                 (data.hasEducationFunds === 'yes' || data.hasScholarship === 'yes')) {
-          score += 8;
-        }
-        // Basic student profile
-        else if (data.hasTuitionCovered === 'yes' || data.hasSponsorIncome === 'yes') {
-          score += 5;
-        }
+        let studentScore = 0;
+        if (data.hasTuitionCovered === 'yes') studentScore += 2;
+        if (data.hasSponsorIncome === 'yes') studentScore += 2;
+        if (data.hasScholarship === 'yes') studentScore += 1;
+        if (data.hasEducationFunds === 'yes') studentScore += 1;
+        score += Math.min(studentScore, 6);
       }
-      // Non-student scoring
-      else {
-        // Age-based scoring
-        if (age >= 25 && age <= 45 && 
-            (data.occupation === 'employed' || data.occupation === 'self-employed')) {
-          score += 10;
-        } else if (age >= 46 && age <= 55) {
-          score += 8;
+
+      // --- 👤 General Age & Occupation Risk Scoring ---
+      if (data.visitPurpose !== 'study') {
+        if (age >= 25 && age <= 45) score += 3;
+        else if (age >= 46 && age <= 55) score += 2;
+        else if (age > 55) {
+          if (data.hasAssets === 'yes') score += 2;
+          if (data.monthlyIncome === 'high') score += 1;
         } else if (age >= 18 && age <= 24) {
-          // Check for strong documentation and ties
-          const hasStrongDocs = data.documents.length >= 4;
-          const hasStrongTies = data.hasImmediateFamily === 'yes' && data.hasLongTermCommitments === 'yes';
-          if (hasStrongDocs && hasStrongTies) {
-            score += 7;
-          }
-        } else if (age > 55) {
-          // Retired with stable finances
-          const hasStableFinances = data.monthlyIncome === 'high' && data.savings === 'high';
-          const hasStrongTies = data.hasImmediateFamily === 'yes' && data.hasLongTermCommitments === 'yes';
-          const hasAssets = data.hasAssets === 'yes';
-          
-          if (hasStableFinances && hasStrongTies && hasAssets) {
-            score += 10; // Maximum points for retired persons with strong profile
-          } else if (hasStableFinances && (hasStrongTies || hasAssets)) {
-            score += 8; // Good points for retired persons with partial strong profile
-          } else if (hasStableFinances) {
-            score += 6; // Basic points for retired persons with stable finances
-          }
+          if (data.hasImmediateFamily === 'yes') score += 1;
+          if (data.hasLongTermCommitments === 'yes') score += 1;
+          if ((data.documents || []).length >= 4) score += 1;
         } else if (age < 18) {
-          // Under 18 without family support
-          if (data.hasImmediateFamily !== 'yes') {
-            score += 2;
-          } else {
-            score += 4;
-          }
+          score += data.hasImmediateFamily === 'yes' ? 2 : 0;
         }
-  
-        // Additional points for business travelers with strong profile
-        if (data.visitPurpose === 'business' && 
-            data.hasBusinessProof === 'yes' && 
-            data.hasBusinessInvitation === 'yes' && 
-            data.hasTaxReturns === 'yes' && 
-            data.businessSavings === 'high' && 
-            data.hasInsuranceAndAssets === 'yes') {
-          score += 8; // Points for strong business profile
-        }
-      }
-  
-      // Single male under 30 from Tier 4-5 countries
-      if (data.gender === 'male' && age < 30 && isTier4or5Country) {
-        const hasStrongProfile = data.savings === 'above20000' && 
-                               data.hasJobOffer === 'yes' && 
-                               data.hasAssets === 'yes';
-        if (!hasStrongProfile) {
+
+        if (['employed', 'self-employed'].includes(data.occupation)) {
           score += 2;
-        } else {
-          score += 5; // More points if they have strong financial profile
         }
       }
-  
-      // Standard risk factors
-      if (data.hasVisaDenialHistory === 'yes') score -= 5;
-      if (data.hasConfirmedAccommodation === 'no') score -= 2;
+
+      // --- 💼 Business Profile Bonus ---
+      if (data.visitPurpose === 'business') {
+        if (
+          data.hasBusinessProof === 'yes' &&
+          data.hasBusinessInvitation === 'yes' &&
+          data.hasTaxReturns === 'yes' &&
+          data.businessSavings === 'high' &&
+          data.hasInsuranceAndAssets === 'yes'
+        ) {
+          score += 4;
+        }
+      }
+
+      // --- 🚩 Risk Adjustments ---
+      if (isHighRiskDemo && (!data.hasAssets || data.occupation !== 'employed')) {
+        score -= 2;
+      }
+
+      if (data.hasVisaDenialHistory === 'yes') score -= 3;
+      if (data.hasConfirmedAccommodation === 'no') score -= 1;
       if (data.hasTravelItinerary === 'no') score -= 1;
-  
-      return Math.min(score, 10);
+
+      // --- 🧮 Clamp to Range ---
+      return Math.max(-5, Math.min(score, 10));
     })();
   
     // Calculate total score before visiting country deduction
