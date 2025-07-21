@@ -565,7 +565,8 @@ const convertHtmlToPdf = async (htmlContent, outputPath = null) => {
     // Launch browser
     const browser = await puppeteer.launch({
       headless: 'new',
-      args: ['--no-sandbox', '--disable-setuid-sandbox']
+      executablePath: puppeteer.executablePath(), // ✅ Force it to use correct Chrome
+      args: ['--no-sandbox', '--disable-setuid-sandbox'],
     });
     
     const page = await browser.newPage();
