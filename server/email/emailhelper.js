@@ -563,7 +563,7 @@ const createVisaScoreEmailContent = (customerEmail, customerName, scoreData) => 
 
 const convertHtmlToPdf = async (htmlContent, outputPath = null) => {
   try {
-    const isLambdaEnv = !!(await chromium.executablePath);
+    const isLambdaEnv = process.env.IS_CLOUD_ENV === "true";
 
   const launchOptions = isLambdaEnv
     ? {
