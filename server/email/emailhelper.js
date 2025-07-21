@@ -1,6 +1,7 @@
 var nodemailer = require("nodemailer");
 const { generateReport } = require("../visa-score/visaScoreHelper");
-const puppeteer = require('puppeteer');
+const puppeteer = require('puppeteer-core');
+const chromium = require('chrome-aws-lambda');
 const fs = require('fs').promises;
 const path = require('path');
 
@@ -562,37 +563,38 @@ const createVisaScoreEmailContent = (customerEmail, customerName, scoreData) => 
 
 const convertHtmlToPdf = async (htmlContent, outputPath = null) => {
   try {
-    // Launch browser
-    const browser = await puppeteer.launch({
-      headless: 'new',
-      executablePath: puppeteer.executablePath(), // ✅ Force it to use correct Chrome
-      args: ['--no-sandbox', '--disable-setuid-sandbox'],
-    });
-    
+    const isLambdaEnv = !!(await chromium.executablePath);
+
+  const launchOptions = isLambdaEnv
+    ? {
+        args: chromium.args,
+        executablePath: await chromium.executablePath,
+        headless: chromium.headless,
+        defaultViewport: chromium.defaultViewport,
+      }
+    : {
+        executablePath: require('puppeteer').executablePath(),
+        headless: true, // your local machine supports full headless
+        args: ['--no-sandbox', '--disable-setuid-sandbox'],
+      };
+      const browser = await puppeteer.launch(launchOptions);
+
+  
     const page = await browser.newPage();
-    
-    // Set content and wait for it to load
     await page.setContent(htmlContent, { waitUntil: 'networkidle0' });
-    
-    // Generate PDF
+  
     const pdfBuffer = await page.pdf({
       format: 'A4',
       printBackground: true,
       margin: {
-        top: '20mm',
-        right: '20mm',
-        bottom: '20mm',
-        left: '20mm'
-      }
+        top: '1in',
+        bottom: '1in',
+        left: '1in',
+        right: '1in',
+      },
     });
     
     await browser.close();
-    
-    // If output path is provided, save to file
-    if (outputPath) {
-      await fs.writeFile(outputPath, pdfBuffer);
-      console.log(`PDF saved to: ${outputPath}`);
-    }
     
     return pdfBuffer;
   } catch (error) {
