@@ -1,6 +1,6 @@
 var nodemailer = require("nodemailer");
 const { generateReport } = require("../visa-score/visaScoreHelper");
-const puppeteer = require('puppeteer-core');
+const puppeteerCore = require('puppeteer-core');
 const chromium = require('chrome-aws-lambda');
 const fs = require('fs').promises;
 const path = require('path');
@@ -565,19 +565,23 @@ const convertHtmlToPdf = async (htmlContent, outputPath = null) => {
   try {
     const isLambdaEnv = process.env.IS_CLOUD_ENV === "true";
 
-  const launchOptions = isLambdaEnv
-    ? {
+    let launchOptions;
+    if (isLambdaEnv) {
+      launchOptions = {
         args: chromium.args,
         executablePath: await chromium.executablePath,
         headless: chromium.headless,
         defaultViewport: chromium.defaultViewport,
-      }
-    : {
-        executablePath: require('puppeteer').executablePath(),
-        headless: true, // your local machine supports full headless
+      };
+    } else {
+      const puppeteer = require('puppeteer'); // ✅ only required locally
+      launchOptions = {
+        executablePath: puppeteer.executablePath(),
+        headless: true,
         args: ['--no-sandbox', '--disable-setuid-sandbox'],
       };
-      const browser = await puppeteer.launch(launchOptions);
+    }
+      const browser = await puppeteerCore.launch(launchOptions);
 
   
     const page = await browser.newPage();
