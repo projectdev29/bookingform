@@ -563,25 +563,30 @@ const createVisaScoreEmailContent = (customerEmail, customerName, scoreData) => 
 
 const convertHtmlToPdf = async (htmlContent, outputPath = null) => {
   try {
-    const isLambdaEnv = process.env.IS_CLOUD_ENV === "true";
+    const chromePath = await chromium.executablePath;
+    const isCloudEnv = !!chromePath; // true if App Platform or Lambda
 
     let launchOptions;
-    if (isLambdaEnv) {
+
+    if (isCloudEnv) {
+      console.log("Using Chrome from App Platform or Lambda");
       launchOptions = {
         args: chromium.args,
-        executablePath: await chromium.executablePath,
+        executablePath: chromePath,
         headless: chromium.headless,
         defaultViewport: chromium.defaultViewport,
       };
     } else {
-      const puppeteer = require('puppeteer'); // ✅ only required locally
+      console.log("Using Chrome from local machine");
+      const puppeteer = require('puppeteer'); // only loaded locally
       launchOptions = {
         executablePath: puppeteer.executablePath(),
         headless: true,
         args: ['--no-sandbox', '--disable-setuid-sandbox'],
       };
     }
-      const browser = await puppeteerCore.launch(launchOptions);
+
+    const browser = await puppeteerCore.launch(launchOptions);
 
   
     const page = await browser.newPage();
