@@ -51,7 +51,7 @@ export default function ReservationForm() {
   const [proceedToPayment, setProceedToPayment] = useState(false);
 
   useEffect(() => {
-    let today = dayjs().add(8, "day");
+    let today = dayjs().add(14, "day");
     const initialDates = [];
     for (let i = 0; i < 8; i++) {
       initialDates.push(today);
