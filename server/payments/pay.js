@@ -164,20 +164,31 @@ const createPaymentForGiftCertificate = async (body) => {
 
 const createPaymentForVisaScore = async (body) => {
   try {
-    // Check if Square Sandbox API is properly configured
-    if (!process.env.SQUARE_SANDBOX_ACCESS_TOKEN) {
-      console.error('Square sandbox access token not configured');
+    // Determine if we should use production or sandbox
+    const useProduction = process.env.USE_PRODUCTION_PAYMENTS === 'true';
+    const environment = useProduction ? 'production' : 'sandbox';
+    
+    // Select appropriate APIs based on environment
+    const paymentsApi = useProduction ? productionPaymentsApi : sandboxPaymentsApi;
+    const customersApi = useProduction ? productionCustomersApi : sandboxCustomersApi;
+    
+    // Check if the required access token is configured
+    const requiredToken = useProduction ? 'SQUARE_ACCESS_TOKEN' : 'SQUARE_SANDBOX_ACCESS_TOKEN';
+    const accessToken = useProduction ? process.env.SQUARE_ACCESS_TOKEN : process.env.SQUARE_SANDBOX_ACCESS_TOKEN;
+    
+    if (!accessToken) {
+      console.error(`Square ${environment} access token not configured`);
       return {
         errors: [{
           category: "CONFIGURATION_ERROR",
-          code: "SQUARE_SANDBOX_NOT_CONFIGURED",
-          detail: "Square sandbox payment system is not properly configured. Please set SQUARE_SANDBOX_ACCESS_TOKEN in your environment variables."
+          code: `SQUARE_${environment.toUpperCase()}_NOT_CONFIGURED`,
+          detail: `Square ${environment} payment system is not properly configured. Please set ${requiredToken} in your environment variables.`
         }]
       };
     }
 
-    console.log('Using Square Sandbox environment for visa score payments');
-    console.log('Square sandbox access token configured:', !!process.env.SQUARE_SANDBOX_ACCESS_TOKEN);
+    console.log(`Using Square ${environment} environment for visa score payments`);
+    console.log(`Square ${environment} access token configured:`, !!accessToken);
     
     const submission = await findById(body.submissionId, "VisaScores");
     if (submission.notFound) {
@@ -194,9 +205,9 @@ const createPaymentForVisaScore = async (body) => {
     }
     
     // Fixed price for visa score report
-    const visaScorePrice = 29.99; // $29.99 for complete visa score report
+    const visaScorePrice = 9.99; // $9.99 for complete visa score report
     
-    const customerResult = await sandboxCustomersApi.searchCustomers({
+    const customerResult = await customersApi.searchCustomers({
       query: { filter: { emailAddress: { exact: body.customer.email } } },
     });
     let customer = null;
@@ -208,7 +219,7 @@ const createPaymentForVisaScore = async (body) => {
       customer = customerResult.result.customers[0];
     }
     if (customer === null) {
-      const response = await sandboxCustomersApi.createCustomer({
+      const response = await customersApi.createCustomer({
         givenName: body.customer.firstName,
         familyName: body.customer.lastName,
         emailAddress: body.customer.email,
@@ -217,12 +228,12 @@ const createPaymentForVisaScore = async (body) => {
       if (response.result.customer) {
         customer = response.result.customer;
       } else {
-        console.log('Square sandbox customer creation error:', response.result.errors);
+        console.log(`Square ${environment} customer creation error:`, response.result.errors);
         return response.result.errors;
       }
     }
 
-    const { result } = await sandboxPaymentsApi.createPayment({
+    const { result } = await paymentsApi.createPayment({
       idempotencyKey: crypto.randomUUID(),
       sourceId: body.sourceId,
       amountMoney: {
@@ -233,15 +244,18 @@ const createPaymentForVisaScore = async (body) => {
       buyerEmailAddress: body.customer.email,
       billingAddress: body.customer.address,
       customerId: customer.id,
-      note: "Visa Score Report - Booking For Visa (Sandbox)",
+      note: `Visa Score Report - Booking For Visa (${environment.charAt(0).toUpperCase() + environment.slice(1)})`,
     });
     return result;
   } catch (error) {
-    console.error('Error in createPaymentForVisaScore (Sandbox):', error);
+    const useProduction = process.env.USE_PRODUCTION_PAYMENTS === 'true';
+    const environment = useProduction ? 'production' : 'sandbox';
+    
+    console.error(`Error in createPaymentForVisaScore (${environment}):`, error);
     
     // Handle Square API errors specifically
     if (error.errors && Array.isArray(error.errors)) {
-      console.log('Square Sandbox API errors:', error.errors);
+      console.log(`Square ${environment} API errors:`, error.errors);
       return error; // Return the Square error directly
     }
     
@@ -254,7 +268,7 @@ const createPaymentForVisaScore = async (body) => {
       errors: [{
         category: "INTERNAL_ERROR",
         code: "PAYMENT_CREATION_FAILED",
-        detail: "Failed to create payment for visa score in sandbox"
+        detail: `Failed to create payment for visa score in ${environment}`
       }]
     };
   }
