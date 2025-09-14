@@ -282,6 +282,22 @@ const createVisaScoreEmailContent = (customerEmail, customerName, scoreData) => 
   const { total, breakdown } = scoreData.visaScore;
   const improvementsHtml = generateReport(scoreData);
   
+  const getScoreBadgeClass = (score) => {
+    if (score >= 80) return 'badge-excellent';
+    if (score >= 65) return 'badge-good';
+    if (score >= 50) return 'badge-moderate';
+    if (score >= 35) return 'badge-weak';
+    return 'badge-poor';
+  };
+  
+  const getScoreBadgeText = (score) => {
+    if (score >= 80) return 'Excellent';
+    if (score >= 65) return 'Good';
+    if (score >= 50) return 'Moderate';
+    if (score >= 35) return 'Weak';
+    return 'Poor';
+  };
+  
   const html_body = `
     <!DOCTYPE html>
     <html>
@@ -289,207 +305,257 @@ const createVisaScoreEmailContent = (customerEmail, customerName, scoreData) => 
       <style>
   body {
     font-family: 'Segoe UI', Roboto, sans-serif;
-    background-color: #f4f6f8;
-    color: #333;
-    line-height: 1.6;
+    background-color: #ffffff;
+    color: #2c3e50;
+    line-height: 1.7;
+    margin: 0;
+    padding: 0;
   }
 
   .container {
-    max-width: 700px;
-    margin: 0 auto;
+    width: 100%;
+    max-width: none;
+    margin: 0;
     background: #ffffff;
-    padding: 24px;
-    border-radius: 10px;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+    padding: 0;
   }
 
   .header {
     text-align: center;
     background-color: #1a237e;
     color: white;
-    padding: 30px 20px;
-    border-radius: 10px 10px 0 0;
+    padding: 25px 20px;
+    margin-bottom: 30px;
   }
 
   .header h1 {
     margin: 0;
-    font-size: 2.2rem;
-    font-weight: 300;
+    font-size: 2rem;
+    font-weight: 400;
+    letter-spacing: 1px;
   }
 
   .header .subtitle {
     margin: 8px 0 0 0;
-    font-size: 1.1rem;
-    opacity: 0.9;
-  }
-
-  .report-header {
-    background-color: #f8f9fa;
-    border: 1px solid #e9ecef;
-    border-radius: 8px;
-    padding: 20px;
-    margin: 20px 0;
-  }
-
-  .report-header h2 {
-    color: #1a237e;
-    margin: 0 0 15px 0;
-    font-size: 1.4rem;
-    border-bottom: 2px solid #1a237e;
-    padding-bottom: 8px;
-  }
-
-  .report-info {
-    display: flex;
-    justify-content: space-between;
-    flex-wrap: wrap;
-    gap: 15px;
-  }
-
-  .info-group {
-    flex: 1;
-    min-width: 200px;
-  }
-
-  .info-label {
-    font-weight: 600;
-    color: #495057;
-    font-size: 0.9rem;
-    margin-bottom: 4px;
-  }
-
-  .info-value {
-    color: #212529;
     font-size: 1rem;
+    opacity: 0.95;
+    font-weight: 300;
   }
 
   .content {
-    padding: 24px;
+    padding: 0 20px;
   }
 
-  .score-box {
-    background-color: #e3f2fd;
-    padding: 24px;
+  .content p {
+    margin: 15px 0;
+    font-size: 0.95rem;
+    color: #34495e;
+  }
+
+  .score-section {
     text-align: center;
-    border-radius: 10px;
-    margin: 20px 0;
+    margin: 30px 0 40px 0;
+    padding: 30px;
+    background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+    border: 3px solid #1a237e;
+    border-radius: 15px;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .score-label {
+    font-size: 1.1rem;
+    color: #1a237e;
+    margin-bottom: 15px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+  }
+
+  .score-gauge {
+    position: relative;
+    width: 180px;
+    height: 180px;
+    margin: 10px auto;
+    background: conic-gradient(from 0deg, #e74c3c 0deg 72deg, #f39c12 72deg 144deg, #f1c40f 144deg 216deg, #27ae60 216deg 288deg, #2ecc71 288deg 360deg);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+  }
+
+  .score-gauge::before {
+    content: '';
+    position: absolute;
+    width: 160px;
+    height: 160px;
+    background-color: white;
+    border-radius: 50%;
+    box-shadow: inset 0 4px 15px rgba(0, 0, 0, 0.1);
+  }
+
+  .score-content {
+    position: relative;
+    z-index: 2;
+    text-align: center;
   }
 
   .total-score {
-    font-size: 48px;
-    font-weight: bold;
-    color: #0d47a1;
+    font-size: 3rem;
+    font-weight: 800;
+    margin: 0;
+    line-height: 1;
+    background: linear-gradient(45deg, #1a237e, #3f51b5);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
   }
 
-  .breakdown h3 {
-    margin-top: 20px;
+  .score-max {
+    font-size: 1rem;
+    color: #6c757d;
+    font-weight: 500;
+    margin-top: 5px;
+  }
+
+  .score-badge {
+    display: inline-block;
+    padding: 8px 20px;
+    border-radius: 25px;
+    font-size: 0.9rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    margin-top: 15px;
+  }
+
+  .badge-excellent { background-color: #27ae60; color: white; }
+  .badge-good { background-color: #3498db; color: white; }
+  .badge-moderate { background-color: #f39c12; color: white; }
+  .badge-weak { background-color: #e74c3c; color: white; }
+  .badge-poor { background-color: #c0392b; color: white; }
+
+  .assessment {
+    padding: 25px 30px;
+    margin: 25px 0;
+    background-color: #fafbfc;
+    border: 1px solid #e8ecef;
+  }
+
+  .assessment.excellent {
+    background-color: #f8fff8;
+  }
+
+  .assessment.good {
+    background-color: #f0f8ff;
+  }
+
+  .assessment.moderate {
+    background-color: #fffbf0;
+  }
+
+  .assessment.weak {
+    background-color: #fff8f8;
+  }
+
+  .assessment.poor {
+    background-color: #fff5f5;
+  }
+
+  .assessment h3 {
+    margin-top: 0;
+    margin-bottom: 12px;
+    font-size: 1.4rem;
+    font-weight: 700;
+    color: #2c3e50;
+  }
+
+  .assessment {
+    page-break-after: always;
+  }
+
+  .assessment p {
     margin-bottom: 10px;
-    font-size: 1.2rem;
-  }
-
-  .breakdown-item {
-    display: flex;
-    justify-content: space-between;
-    padding: 12px 0;
-    border-bottom: 1px solid #eee;
+    line-height: 1.5;
+    color: #34495e;
   }
 
   .improvements {
-  margin-top: 30px;
-  padding: 24px;
-  background-color: #f9f9f9;
-  border: 1px solid #e0e0e0;
-  border-radius: 10px;
-}
+    margin-top: 35px;
+  }
 
-.improvements h2 {
-  font-size: 1.5rem;
-  color: #1a237e;
-  margin-bottom: 16px;
-  border-bottom: 2px solid #cfd8dc;
-  padding-bottom: 6px;
-}
+  .improvements h2 {
+    font-size: 1.8rem;
+    color: #1a237e;
+    margin-bottom: 25px;
+    border-bottom: 3px solid #1a237e;
+    padding-bottom: 12px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+  }
 
-.suggestion-item {
-  margin-bottom: 24px;
-  padding: 16px;
-  background-color: #ffffff;
-  border: 1px solid #e0e0e0;
-  border-radius: 8px;
-}
+  .suggestion-item {
+    margin-bottom: 20px;
+    padding: 20px;
+    background-color: #ffffff;
+    border: 1px solid #e8ecef;
+  }
 
-.suggestion-item h3 {
-  color: #1a237e;
-  font-size: 1.15rem;
-  margin-bottom: 10px;
-}
+  .destination-advice {
+    page-break-before: always;
+  }
 
-.suggestion-item div {
-  font-size: 0.95rem;
-  color: #333;
-}
+  .suggestion-item h3 {
+    color: #1a237e;
+    font-size: 1.3rem;
+    margin-bottom: 12px;
+    font-weight: 600;
+  }
 
-.suggestion-item ul {
-  margin-top: 8px;
-  padding-left: 20px;
-  color: #444;
-}
+  .suggestion-item div {
+    font-size: 0.9rem;
+    color: #34495e;
+    line-height: 1.5;
+  }
 
-.assessment {
-  background: #f8f9fa;
-  border-left: 4px solid;
-  padding: 20px;
-  margin: 20px 0;
-  border-radius: 4px;
-}
+  .suggestion-item ul {
+    margin-top: 8px;
+    padding-left: 18px;
+    color: #34495e;
+  }
 
-.assessment.excellent {
-  border-left-color: #2e7d32;
-  background: #f1f8e9;
-}
-
-.assessment.good {
-  border-left-color: #1976d2;
-  background: #e3f2fd;
-}
-
-.assessment.moderate {
-  border-left-color: #f57c00;
-  background: #fff3e0;
-}
-
-.assessment.weak {
-  border-left-color: #d32f2f;
-  background: #ffebee;
-}
-
-.assessment.poor {
-  border-left-color: #c62828;
-  background: #ffebee;
-}
-
-.assessment h3 {
-  margin-top: 0;
-  margin-bottom: 15px;
-  font-size: 1.2rem;
-  font-weight: 600;
-}
-
-.assessment p {
-  margin-bottom: 12px;
-  line-height: 1.5;
-}
-
-.assessment strong {
-  color: #333;
-}
-
+  .suggestion-item li {
+    margin-bottom: 4px;
+    font-size: 0.9rem;
+  }
 
   .footer {
     text-align: center;
-    font-size: 12px;
-    color: #999;
-    padding-top: 30px;
+    font-size: 11px;
+    color: #7f8c8d;
+    padding-top: 40px;
+    margin-top: 40px;
+    border-top: 1px solid #ecf0f1;
+  }
+
+  /* Print optimizations */
+  @media print {
+    body { 
+      -webkit-print-color-adjust: exact;
+      print-color-adjust: exact;
+    }
+    
+    .header {
+      -webkit-print-color-adjust: exact;
+      print-color-adjust: exact;
+    }
+    
+    .score-section {
+      -webkit-print-color-adjust: exact;
+      print-color-adjust: exact;
+    }
   }
 </style>
 
@@ -506,10 +572,15 @@ const createVisaScoreEmailContent = (customerEmail, customerName, scoreData) => 
           <p>Dear ${customerName},</p>
           <p>Thank you for using Booking For Visa's visa score assessment tool. Below is your detailed visa score report:</p>
           
-          <div class="score-box">
-            <p>Total Visa Score</p>
-            <div class="total-score">${total}/100</div>
-            
+          <div class="score-section">
+            <div class="score-label">Total Visa Score</div>
+            <div class="score-gauge">
+              <div class="score-content">
+                <div class="total-score">${total}</div>
+                <div class="score-max">out of 100</div>
+              </div>
+            </div>
+            <div class="score-badge ${getScoreBadgeClass(total)}">${getScoreBadgeText(total)}</div>
           </div>
 
           ${generateOverallAssessment(total)}
@@ -617,12 +688,50 @@ const createVisaScorePdf = async (customerEmail, customerName, scoreData) => {
     // Get the HTML content
     const { html_body } = createVisaScoreEmailContent(customerEmail, customerName, scoreData);
     
-    // Convert to PDF
-    const pdfBuffer = await convertHtmlToPdf(html_body);
+    // Convert to PDF using PDFShift
+    const pdfBuffer = await generateVisaScorePdfWithPdfShift(html_body);
+    
+    // Commented out old Puppeteer method:
+    // const pdfBuffer = await convertHtmlToPdf(html_body);
     
     return pdfBuffer;
   } catch (error) {
     console.error('Error creating visa score PDF:', error);
+    throw error;
+  }
+};
+
+const generateVisaScorePdfWithPdfShift = async (html_body) => {
+  try {
+    const fetch = require('node-fetch');
+
+    const response = await fetch('https://api.pdfshift.io/v3/convert/pdf', {
+        method: 'POST',
+        headers: {
+            'X-API-Key': process.env.PDFSHIFT_API_KEY ,
+            'Content-type': 'application/json'
+        },
+        body: JSON.stringify({
+            source: html_body,
+            landscape: false,
+            use_print: false,
+            margin: {
+                top: "1in",
+                right: "1in", 
+                bottom: "1in",
+                left: "1in"
+            }
+        })
+    });
+
+    if (!response.ok) {
+        throw new Error(`PDFShift API error: ${response.status} ${response.statusText}`);
+    }
+
+    const pdfBuffer = await response.buffer();
+    return pdfBuffer;
+  } catch (error) {
+    console.error('Error generating visa score PDF with PDFShift:', error);
     throw error;
   }
 };
@@ -676,5 +785,6 @@ module.exports = {
   createVisaScoreEmailContent,
   convertHtmlToPdf,
   createVisaScorePdf,
+  generateVisaScorePdfWithPdfShift,
   sendVisaScoreReportWithPdf
 };

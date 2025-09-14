@@ -572,7 +572,7 @@ function renderDestinationAdvice(destination) {
   if (!advice) return '';
 
   let html = `
-    <div class="suggestion-item">
+    <div class="suggestion-item destination-advice">
       <h3>Important notes about ${destination}</h3>
       <p><strong>Risk Level:</strong> ${advice.riskLevel.replace('_', ' ').toUpperCase()}</p>
       <p><strong>Common Rejection Reasons:</strong></p>
@@ -1193,13 +1193,13 @@ const generateReport = (scoreData) => {
     const score = breakdown[category];
     const maxPoints = categoryMaxPoints[category];
     const label = {
-      nationality: "Nationality",
-      travel: "Travel History",
-      financial: "Financial Strength",
-      ties: "Ties to Home Country",
-      documents: "Documentation",
-      risk: "Risk Factors",
-      visitingCountry: "Visiting Country Difficulty"
+      nationality: "🏳️ Nationality",
+      travel: "✈️ Travel History",
+      financial: "💰 Financial Strength",
+      ties: "🏠 Ties to Home Country",
+      documents: "📄 Documentation",
+      risk: "⚠️ Risk Factors",
+      visitingCountry: "🌍 Visiting Country Difficulty"
     }[category];
 
     // Special handling for visitingCountry since it can be negative
