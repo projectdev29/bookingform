@@ -1,5 +1,25 @@
 const path = require("path");
-require("dotenv").config();
+const fs = require("fs");
+
+// Try to load .env from server directory first, then parent directory as fallback
+const envPath = path.join(__dirname, '.env');
+const parentEnvPath = path.join(__dirname, '..', '.env');
+
+if (fs.existsSync(envPath)) {
+  require("dotenv").config({ path: envPath });
+} else if (fs.existsSync(parentEnvPath)) {
+  require("dotenv").config({ path: parentEnvPath });
+} else {
+  require("dotenv").config(); // Default behavior
+}
+
+// Debug: Verify API key is loaded (only log first few chars for security)
+if (process.env.OPENAI_API_KEY) {
+  console.log('✅ OPENAI_API_KEY loaded successfully');
+} else {
+  console.warn('⚠️  OPENAI_API_KEY not found in environment variables');
+  console.warn('   Checked paths:', envPath, parentEnvPath);
+}
 
 const express = require("express");
 const cors = require("cors");
@@ -30,6 +50,7 @@ const {
 const { submitVisaScore } = require("./visa-score/visaScoreHelper");
 const { createVisaScoreEmailContent, sendVisaScoreReport, createVisaScorePdf } = require("./email/emailhelper");
 const { sendVisaScoreReportWithPdf } = require("./email/emailhelper");
+const { generateNextQuestion, validateAnswer, generateEvaluation } = require("./visa-bot/openai");
 
 const PORT = process.env.PORT || 3001;
 
@@ -287,6 +308,55 @@ app.post("/api/submit-visa-score", async (req, res) => {
   }
 });
 
+// Generate next question endpoint
+app.post("/api/generate-next-question", async (req, res) => {
+  try {
+    const result = await generateNextQuestion(req.body);
+    if (result.error) {
+      return res.status(400).json(result);
+    }
+    res.json(result);
+  } catch (error) {
+    res.status(500).json({ 
+      question: null,
+      error: error.message || "Internal server error"
+    });
+  }
+});
+
+// Validate answer endpoint
+app.post("/api/validate-answer", async (req, res) => {
+  try {
+    const result = await validateAnswer(req.body);
+    if (result.error && !result.isValidAnswer) {
+      return res.status(400).json(result);
+    }
+    res.json(result);
+  } catch (error) {
+    res.status(500).json({
+      isValidAnswer: false,
+      reason: "Internal server error",
+      followUpQuestion: null,
+      error: error.message
+    });
+  }
+});
+
+// Generate evaluation endpoint
+app.post("/api/generate-evaluation", async (req, res) => {
+  try {
+    const result = await generateEvaluation(req.body);
+    if (result.error) {
+      return res.status(400).json(result);
+    }
+    res.json(result);
+  } catch (error) {
+    res.status(500).json({
+      evaluation: "Evaluation unavailable due to system error.",
+      error: error.message
+    });
+  }
+});
 
 app.get("*", (req, res) => {
   res.sendFile(path.resolve(__dirname, "../client/build", "index.html"));
