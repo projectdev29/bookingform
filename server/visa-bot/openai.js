@@ -1,5 +1,5 @@
 const OpenAI = require('openai');
-const { getInterviewSystemPrompt, getEvaluationRules, getValidationRules } = require('./llmprompts');
+const { getInterviewSystemPrompt, getEvaluationRules, getValidationRules } = require('./llmPrompts');
 
 // Lazy initialization of OpenAI client to ensure env vars are loaded
 let openai = null;
