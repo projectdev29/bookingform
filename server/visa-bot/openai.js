@@ -1,5 +1,5 @@
 const OpenAI = require('openai');
-const { getInterviewSystemPrompt } = require('./llmprompts');
+const { getInterviewSystemPrompt, getEvaluationRules, getValidationRules } = require('./llmprompts');
 
 // Lazy initialization of OpenAI client to ensure env vars are loaded
 let openai = null;
@@ -76,8 +76,10 @@ const validateAnswer = async (requestBody) => {
           };
         }
     
-        // Get system prompt from llmprompts.js
+        // Get system prompt and validation rules from llmprompts.js
         const systemPrompt = getInterviewSystemPrompt();
+        const validationRules = getValidationRules();
+        const fullValidationPrompt = `${validationPrompt}\n\n${validationRules}`;
     
         console.log("🔵 Backend: Calling LLM for ANSWER VALIDATION...");
     
@@ -87,7 +89,7 @@ const validateAnswer = async (requestBody) => {
           response_format: { type: "json_object" }, // CRITICAL - ensures JSON response
           messages: [
             { role: "system", content: systemPrompt },
-            { role: "assistant", content: validationPrompt },
+            { role: "assistant", content: fullValidationPrompt },
             { role: "user", content: userAnswer }
           ],
           temperature: 0.0 // classification → MUST be deterministic
@@ -125,13 +127,17 @@ const generateEvaluation = async (requestBody) => {
           };
         }
     
+        // Get evaluation rules and append to the prompt
+        const evaluationRules = getEvaluationRules();
+        const fullEvaluationPrompt = `${evaluationPrompt}\n\n${evaluationRules}`;
+    
         console.log("🔵 Backend: Calling LLM for FINAL EVALUATION...");
     
         const client = getOpenAIClient();
         const response = await client.chat.completions.create({
           model: "gpt-4o",
           messages: [
-            { role: "system", content: evaluationPrompt }
+            { role: "system", content: fullEvaluationPrompt }
           ],
           temperature: 0.35, // light creativity allowed for writing tone
           max_tokens: 800 // enough for a detailed evaluation
