@@ -51,6 +51,7 @@ const { submitVisaScore } = require("./visa-score/visaScoreHelper");
 const { createVisaScoreEmailContent, sendVisaScoreReport, createVisaScorePdf } = require("./email/emailhelper");
 const { sendVisaScoreReportWithPdf } = require("./email/emailhelper");
 const { generateNextQuestion, validateAnswer, generateEvaluation } = require("./visa-bot/openai");
+const { submitInterviewTranscript, submitInterviewFeedback } = require("./interview/interviewHelper");
 
 const PORT = process.env.PORT || 3001;
 
@@ -302,6 +303,32 @@ app.post("/api/submit-visa-score", async (req, res) => {
     res.status(200).json({
       visaScore: result.visaScore,
       submissionId: result.data.id || result.data.insertedId
+    });
+  } else {
+    res.status(400).json({ error: result.error });
+  }
+});
+
+// Submit interview transcript endpoint
+app.post("/api/submit-interview-transcript", async (req, res) => {
+  const result = await submitInterviewTranscript(req.body);
+  if (result.success) {
+    res.status(200).json({
+      submissionId: result.data.id || result.data.insertedId,
+      message: "Interview transcript submitted successfully"
+    });
+  } else {
+    res.status(400).json({ error: result.error });
+  }
+});
+
+// Submit interview feedback endpoint
+app.post("/api/submit-interview-feedback", async (req, res) => {
+  const result = await submitInterviewFeedback(req.body);
+  if (result.success) {
+    res.status(200).json({
+      submissionId: result.data.id || result.data.insertedId,
+      message: "Interview feedback submitted successfully"
     });
   } else {
     res.status(400).json({ error: result.error });
