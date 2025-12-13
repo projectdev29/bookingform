@@ -1,4 +1,5 @@
 const OpenAI = require('openai');
+const { getInterviewSystemPrompt } = require('./llmprompts');
 
 // Lazy initialization of OpenAI client to ensure env vars are loaded
 let openai = null;
@@ -18,15 +19,18 @@ const getOpenAIClient = () => {
 
 const generateNextQuestion = async (requestBody) => {
     try {
-        const { systemPrompt, assistantPrompt, context } = requestBody;
+        const { assistantPrompt, context } = requestBody;
     
         // Validate required fields
-        if (!systemPrompt || !assistantPrompt) {
+        if (!assistantPrompt) {
           return {
             question: null,
-            error: "Missing required fields: systemPrompt and assistantPrompt are required"
+            error: "Missing required field: assistantPrompt is required"
           };
         }
+    
+        // Get system prompt from llmprompts.js
+        const systemPrompt = getInterviewSystemPrompt();
     
         console.log("🔵 Backend: Calling LLM for QUESTION generation...");
         console.log("Context:", context);
@@ -62,15 +66,18 @@ const generateNextQuestion = async (requestBody) => {
 
 const validateAnswer = async (requestBody) => {
     try {
-        const { systemPrompt, validationPrompt, userAnswer, context } = requestBody;
+        const { validationPrompt, userAnswer, context } = requestBody;
     
         // Validate required fields
-        if (!systemPrompt || !validationPrompt || !userAnswer) {
+        if (!validationPrompt || !userAnswer) {
           return {
             isValidAnswer: false,
-            error: "Missing required fields: systemPrompt, validationPrompt, and userAnswer are required"
+            error: "Missing required fields: validationPrompt and userAnswer are required"
           };
         }
+    
+        // Get system prompt from llmprompts.js
+        const systemPrompt = getInterviewSystemPrompt();
     
         console.log("🔵 Backend: Calling LLM for ANSWER VALIDATION...");
     
