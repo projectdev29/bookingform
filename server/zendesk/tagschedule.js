@@ -4,7 +4,10 @@ require("dotenv").config();
 //
 // ZENDESK_TAG_SCHEDULE          "Mon-Fri 11:00-18:00=N; Sat,Sun 12:00-16:00=W; default=I"
 // ZENDESK_TAG_TIMEZONE          "America/Los_Angeles"
-// ZENDESK_TAG_DELIVERY_OVERRIDES "Later Date=N"
+// ZENDESK_TAG_DELIVERY_OVERRIDES "Later Date=N"   (unset -> no overrides)
+//
+// Delivery-option overrides are opt-in: with nothing configured every order,
+// including "Later Date", is tagged purely from the schedule.
 //
 // Any number of distinct tags may be used. Windows are matched in the order
 // they are written and the first one that matches wins; "default" applies when
@@ -15,7 +18,7 @@ const DAY_NAMES = ["sun", "mon", "tue", "wed", "thu", "fri", "sat"];
 
 const DEFAULT_TIMEZONE = "America/Los_Angeles";
 const DEFAULT_SCHEDULE = "11:00-18:00=N; default=I";
-const DEFAULT_DELIVERY_OVERRIDES = "Later Date=N";
+const DEFAULT_DELIVERY_OVERRIDES = "";
 
 const parseTimeOfDay = (value) => {
   const match = /^(\d{1,2}):(\d{2})$/.exec(value.trim());
@@ -208,9 +211,7 @@ const resolveConfig = (env) => {
     resolveSetting(
       env,
       "ZENDESK_TAG_DELIVERY_OVERRIDES",
-      env.ZENDESK_TAG_DELIVERY_OVERRIDES === undefined
-        ? DEFAULT_DELIVERY_OVERRIDES
-        : ""
+      DEFAULT_DELIVERY_OVERRIDES
     ),
   ];
 
