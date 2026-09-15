@@ -2,27 +2,7 @@ var axios = require("axios");
 const { findById } = require("../database/mongodbhelper");
 const { sendEmail } = require("../email/emailhelper");
 const { generateHtml } = require("../html/htmlhelper");
-
-// "N" if the order came in between 11am and 6pm Pacific, or if the customer
-// chose a later delivery date. Everything else is immediate ("I").
-const getOrderTag = (formSubmission) => {
-  if (formSubmission.formData.deliveryOptionValue === "Later Date") {
-    return "N";
-  }
-
-  const orderedAt = formSubmission.createdAt
-    ? new Date(formSubmission.createdAt)
-    : new Date();
-  const pacificHour = Number(
-    new Intl.DateTimeFormat("en-US", {
-      timeZone: "America/Los_Angeles",
-      hour: "numeric",
-      hour12: false,
-    }).format(orderedAt)
-  );
-
-  return pacificHour >= 11 && pacificHour < 18 ? "N" : "I";
-};
+const { getOrderTag } = require("./tagschedule");
 
 const createTicket = async (submissionId) => {
   const formSubmission = await findById(submissionId, "FormSubmissions");
@@ -38,6 +18,7 @@ const createTicket = async (submissionId) => {
     };
   }
 
+  const tag = getOrderTag(formSubmission);
   const html_body = generateHtml(formSubmission);
   sendEmail(formSubmission.orderNumber, html_body);
 
@@ -51,7 +32,7 @@ const createTicket = async (submissionId) => {
       comment: {
         html_body: html_body,
       },
-      tags: [getOrderTag(formSubmission)],
+      tags: tag ? [tag] : [],
     },
   });
   const encodedCreds = Buffer.from(process.env.ZENDESK_CREDENTIALS).toString(
