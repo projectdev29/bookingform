@@ -186,9 +186,56 @@ const resolveTimeZone = (timeZone) => {
   }
 };
 
-const getScheduledTag = (orderedAt, env = process.env) => {
-  const schedule = parseSchedule(env.ZENDESK_TAG_SCHEDULE || DEFAULT_SCHEDULE);
-  const timeZone = resolveTimeZone(env.ZENDESK_TAG_TIMEZONE || DEFAULT_TIMEZONE);
+// Reads one setting, reporting whether the value came from the environment or
+// from the built-in default.
+const resolveSetting = (env, name, fallback) => {
+  const configured = env[name];
+  if (configured === undefined || configured.trim().length === 0) {
+    return { name: name, value: fallback, source: "default" };
+  }
+  return { name: name, value: configured, source: "env" };
+};
+
+// Logged once per distinct configuration rather than once per ticket, so a
+// restart or a config change is visible without flooding the log.
+let lastLoggedConfig = null;
+
+// Resolves all three settings together and logs where each one came from.
+const resolveConfig = (env) => {
+  const settings = [
+    resolveSetting(env, "ZENDESK_TAG_SCHEDULE", DEFAULT_SCHEDULE),
+    resolveSetting(env, "ZENDESK_TAG_TIMEZONE", DEFAULT_TIMEZONE),
+    resolveSetting(
+      env,
+      "ZENDESK_TAG_DELIVERY_OVERRIDES",
+      env.ZENDESK_TAG_DELIVERY_OVERRIDES === undefined
+        ? DEFAULT_DELIVERY_OVERRIDES
+        : ""
+    ),
+  ];
+
+  const summary = settings
+    .map(
+      (setting) =>
+        setting.name +
+        " (" +
+        setting.source +
+        ") = " +
+        JSON.stringify(setting.value)
+    )
+    .join(", ");
+  if (summary !== lastLoggedConfig) {
+    lastLoggedConfig = summary;
+    console.log("Zendesk tag configuration: " + summary);
+  }
+
+  return { schedule: settings[0], timeZone: settings[1], overrides: settings[2] };
+};
+
+const getScheduledTag = (orderedAt, env = process.env, config = null) => {
+  const resolved = config || resolveConfig(env);
+  const schedule = parseSchedule(resolved.schedule.value);
+  const timeZone = resolveTimeZone(resolved.timeZone.value);
   const zoned = getZonedParts(orderedAt, timeZone);
 
   for (const window of schedule.windows) {
@@ -203,11 +250,8 @@ const getScheduledTag = (orderedAt, env = process.env) => {
 // otherwise whichever schedule window the order time falls in. Returns null
 // when nothing matches and no default is configured, meaning "no tag".
 const getOrderTag = (formSubmission, env = process.env) => {
-  const overrides = parseDeliveryOverrides(
-    env.ZENDESK_TAG_DELIVERY_OVERRIDES === undefined
-      ? DEFAULT_DELIVERY_OVERRIDES
-      : env.ZENDESK_TAG_DELIVERY_OVERRIDES
-  );
+  const config = resolveConfig(env);
+  const overrides = parseDeliveryOverrides(config.overrides.value);
 
   const deliveryOption = (formSubmission.formData || {}).deliveryOptionValue;
   if (typeof deliveryOption === "string") {
@@ -224,9 +268,9 @@ const getOrderTag = (formSubmission, env = process.env) => {
     console.log(
       "Unusable createdAt on submission, tagging from the current time instead"
     );
-    return getScheduledTag(new Date(), env);
+    return getScheduledTag(new Date(), env, config);
   }
-  return getScheduledTag(orderedAt, env);
+  return getScheduledTag(orderedAt, env, config);
 };
 
 module.exports = { getOrderTag, getScheduledTag };
