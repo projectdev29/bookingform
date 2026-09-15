@@ -58,7 +58,7 @@ const parseDayList = (value) => {
 
 const parseWindow = (left, tag) => {
   const parts = left.split(/\s+/).filter((part) => part.length > 0);
-  if (parts.length > 2) {
+  if (parts.length === 0 || parts.length > 2) {
     return null;
   }
   const days = parts.length === 2 ? parseDayList(parts[0]) : null;
@@ -192,7 +192,9 @@ const resolveTimeZone = (timeZone) => {
 // Reads one setting, reporting whether the value came from the environment or
 // from the built-in default.
 const resolveSetting = (env, name, fallback) => {
-  const configured = env[name];
+  const raw = env[name];
+  const configured =
+    raw === undefined || raw === null ? undefined : String(raw);
   if (configured === undefined || configured.trim().length === 0) {
     return { name: name, value: fallback, source: "default" };
   }
@@ -250,7 +252,7 @@ const getScheduledTag = (orderedAt, env = process.env, config = null) => {
 // The tag for an order: a configured delivery-option override if one applies,
 // otherwise whichever schedule window the order time falls in. Returns null
 // when nothing matches and no default is configured, meaning "no tag".
-const getOrderTag = (formSubmission, env = process.env) => {
+const resolveOrderTag = (formSubmission, env) => {
   const config = resolveConfig(env);
   const overrides = parseDeliveryOverrides(config.overrides.value);
 
@@ -272,6 +274,25 @@ const getOrderTag = (formSubmission, env = process.env) => {
     return getScheduledTag(new Date(), env, config);
   }
   return getScheduledTag(orderedAt, env, config);
+};
+
+// Tagging must never be the reason an order fails to reach Zendesk, so this
+// never throws: anything unexpected is logged and the order goes out untagged.
+// A tag is only returned when it is a usable non-empty string.
+const getOrderTag = (formSubmission, env = process.env) => {
+  try {
+    const tag = resolveOrderTag(formSubmission || {}, env || {});
+    if (typeof tag !== "string" || tag.trim().length === 0) {
+      return null;
+    }
+    return tag.trim();
+  } catch (err) {
+    console.log(
+      "Error determining the Zendesk tag, continuing untagged. Error: " +
+        (err && err.stack ? err.stack : err)
+    );
+    return null;
+  }
 };
 
 module.exports = { getOrderTag, getScheduledTag };

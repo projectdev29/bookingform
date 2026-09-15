@@ -18,7 +18,19 @@ const createTicket = async (submissionId) => {
     };
   }
 
-  const tag = getOrderTag(formSubmission);
+  // Belt and braces: getOrderTag already swallows its own failures, but a
+  // ticket must go out even if that ever stops being true.
+  let tag = null;
+  try {
+    tag = getOrderTag(formSubmission);
+  } catch (err) {
+    console.log(
+      "Error determining the Zendesk tag for " +
+        formSubmission.orderNumber +
+        ", creating the ticket untagged. Error: " +
+        err
+    );
+  }
   const html_body = generateHtml(formSubmission);
   sendEmail(formSubmission.orderNumber, html_body);
 
