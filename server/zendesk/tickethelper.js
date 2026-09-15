@@ -34,19 +34,23 @@ const createTicket = async (submissionId) => {
   const html_body = generateHtml(formSubmission);
   sendEmail(formSubmission.orderNumber, html_body);
 
-  let data = JSON.stringify({
-    ticket: {
-      requester: {
-        name: "BFV_Order",
-        email: formSubmission.formData.email,
-      },
-      subject: "Order Update (" + formSubmission.orderNumber + ")",
-      comment: {
-        html_body: html_body,
-      },
-      tags: tag ? [tag] : [],
+  const ticket = {
+    requester: {
+      name: "BFV_Order",
+      email: formSubmission.formData.email,
     },
-  });
+    subject: "Order Update (" + formSubmission.orderNumber + ")",
+    comment: {
+      html_body: html_body,
+    },
+  };
+  // tags is optional on create, so leave it out entirely rather than sending
+  // an empty array, whose behavior Zendesk does not document.
+  if (tag) {
+    ticket.tags = [tag];
+  }
+
+  let data = JSON.stringify({ ticket: ticket });
   const encodedCreds = Buffer.from(process.env.ZENDESK_CREDENTIALS).toString(
     "base64"
   );
